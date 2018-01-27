@@ -43,33 +43,33 @@ OutputStmt : WRITE '(' E ')' ';'{$$=createTree(0, NODE_WRITE, TYPE_NULL, NULL, $
 AsgStmt : ID ASSIGN E ';'	{$$=createTree(0, NODE_ASSIGN, TYPE_INT, NULL, $1, $3, NULL);}
 	;
 
-IfStmt  : IF '(' E ')' THEN Slist ELSE Slist ENDIF ';' {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, $8);if($3->type != TYPE_BOOL){printf("Type mismatch!\n");exit(0);}}
-        | IF '(' E ')' THEN Slist ENDIF ';'            {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, NULL);if($3->type != TYPE_BOOL){printf("Type mismatch!\n");exit(0);}}
+IfStmt  : IF '(' E ')' THEN Slist ELSE Slist ENDIF ';' {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, $8);}
+        | IF '(' E ')' THEN Slist ENDIF ';'            {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, NULL);}
         ;
-WhileStmt : WHILE '(' E ')' DO Slist ENDWHILE ';'     {$$ = createTree(0, NODE_WHILE, TYPE_NULL, NULL, $3, $6, NULL);if($3->type != TYPE_BOOL){printf("Type mismatch!\n");exit(0);}}
+WhileStmt : WHILE '(' E ')' DO Slist ENDWHILE ';'     {$$ = createTree(0, NODE_WHILE, TYPE_NULL, NULL, $3, $6, NULL);}
             ;
 BreakStmt : BREAK ';'                               {$$ = createTree(0, NODE_BREAK, TYPE_NULL, NULL, NULL, NULL, NULL);}
             ;
 ContinueStmt : CONTINUE ';'                         {$$ = createTree(0, NODE_CONTINUE, TYPE_NULL, NULL, NULL, NULL, NULL);}
             ;
-E :   E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL);if($$->type != $1->type || $$->type != $3->type){printf("Type mismatch!\n");exit(0);}}
-	| E MINUS E 	{$$=createTree(0, NODE_MINUS, TYPE_INT, NULL, $1, $3, NULL);if($$->type != $1->type || $$->type != $3->type){printf("Type mismatch!\n");exit(0);}}
-	| E MUL E 	{$$=createTree(0, NODE_MUL, TYPE_INT, NULL, $1, $3, NULL);if($$->type != $1->type || $$->type != $3->type){printf("Type mismatch!\n");exit(0);}}
-	| E DIV E 	{$$=createTree(0, NODE_DIV, TYPE_INT, NULL, $1, $3, NULL);if($$->type != $1->type || $$->type != $3->type){printf("Type mismatch!\n");exit(0);}}
-    | E LT E 	{$$=createTree(0, NODE_LT, TYPE_BOOL, NULL, $1, $3, NULL);if($$->type == $1->type || $$->type == $3->type){printf("Type mismatch!\n");exit(0);}}
-    | E LE E 	{$$=createTree(0, NODE_LE, TYPE_BOOL, NULL, $1, $3, NULL);if($$->type == $1->type || $$->type == $3->type){printf("Type mismatch!\n");exit(0);}}
-	| E GT E 	{$$=createTree(0, NODE_GT, TYPE_BOOL, NULL, $1, $3, NULL);if($$->type == $1->type || $$->type == $3->type){printf("Type mismatch!\n");exit(0);}}
-    | E GE E 	{$$=createTree(0, NODE_GE, TYPE_BOOL, NULL, $1, $3, NULL);if($$->type == $1->type || $$->type == $3->type){printf("Type mismatch!\n");exit(0);}}
-    | E NE E 	{$$=createTree(0, NODE_NE, TYPE_BOOL, NULL, $1, $3, NULL);if($$->type == $1->type || $$->type == $3->type){printf("Type mismatch!\n");exit(0);}}
-    | E EQ E 	{$$=createTree(0, NODE_EQ, TYPE_BOOL, NULL, $1, $3, NULL);if($$->type == $1->type || $$->type == $3->type){printf("Type mismatch!\n");exit(0);}}
-    | '(' E ')' 	{$$=$2;}
+E :   E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL);}
+	| E MINUS E {$$=createTree(0, NODE_MINUS, TYPE_INT, NULL, $1, $3, NULL);}
+	| E MUL E 	{$$=createTree(0, NODE_MUL, TYPE_INT, NULL, $1, $3, NULL);}
+	| E DIV E 	{$$=createTree(0, NODE_DIV, TYPE_INT, NULL, $1, $3, NULL);}
+    | E LT E 	{$$=createTree(0, NODE_LT, TYPE_BOOL, NULL, $1, $3, NULL);}
+    | E LE E 	{$$=createTree(0, NODE_LE, TYPE_BOOL, NULL, $1, $3, NULL);}
+	| E GT E 	{$$=createTree(0, NODE_GT, TYPE_BOOL, NULL, $1, $3, NULL);}
+    | E GE E 	{$$=createTree(0, NODE_GE, TYPE_BOOL, NULL, $1, $3, NULL);}
+    | E NE E 	{$$=createTree(0, NODE_NE, TYPE_BOOL, NULL, $1, $3, NULL);}
+    | E EQ E 	{$$=createTree(0, NODE_EQ, TYPE_BOOL, NULL, $1, $3, NULL);}
+    | '(' E ')' {$$=$2;}
 	| NUM | ID	{$$=$1;}
 	;
-
 %%
 
 void yyerror(char const *s){
 	printf("yyerror %s\n",s);
+    exit(0);
 }
 
 int main(int argc, char* argv[]){

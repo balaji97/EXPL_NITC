@@ -235,4 +235,41 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 	temp->ptr1=ptr1;
 	temp->ptr2=ptr2;
     temp->ptr3=ptr3;
+    semanticCheck(temp);
+    return temp;
+}
+void semanticCheck(struct tnode *t)
+{
+    switch(t->nodetype)
+    {
+        case NODE_IF    :
+        case NODE_WHILE :
+                        if(t->ptr1->type != TYPE_BOOL)
+                        {
+                            yyerror("Error. Conditional type not bool.\n");
+                        }
+                        break;
+        case NODE_PLUS  :
+        case NODE_MINUS :
+        case NODE_MUL   :
+        case NODE_DIV   :
+                        t->type = t->ptr1->type;
+                        if(t->type != t->ptr2->type || t->type != TYPE_INT)
+                        {
+                            yyerror("Error. Operator type mismatch!\n");
+                        }
+                        break;
+        case NODE_LT    :
+        case NODE_LE    :
+        case NODE_GT    :
+        case NODE_GE    :
+        case NODE_NE    :
+        case NODE_EQ    :
+                        if(t->ptr1->type != t->ptr2->type)
+                            yyerror("Error. Comparision type mismatch.\n");
+                        break;
+        default:
+                        break;
+                        
+    }
 }

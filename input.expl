@@ -1,0 +1,15 @@
+begin
+	read(a);
+	b = a;
+	while(1 == 1) do
+		if(a == 0) then
+			break;
+		endif;
+		read(a);
+		if(a == 2) then
+			continue;
+		endif;
+		b = b + a;
+	endwhile;
+	write(b);
+end

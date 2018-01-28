@@ -35,7 +35,10 @@ reg_index codeGen(struct tnode *t)
     {
 		case NODE_NUM:
 			r1=getReg();
-			fprintf(target_file, "MOV R%d, %d\n", r1, t->val);
+            if(t->type == TYPE_INT)
+                fprintf(target_file, "MOV R%d, %d\n", r1, t->val);
+            else
+                fprintf(target_file, "MOV R%d, \"%s\"\n", r1, t->varname);
 			return r1;
 		case NODE_VAR:
 			r1=getReg();
@@ -273,3 +276,26 @@ void semanticCheck(struct tnode *t)
                         
     }
 }
+void declareVariables(int type, struct varList *l)
+{
+    printf("Following variables of type %d declared:\n", type);
+    while(l != NULL)
+    {
+        printf("%s\n", l->varName);
+        l = l->next;
+    }
+}
+struct varList* appendVariable(struct varList *l, struct tnode *t)
+{
+    struct varList *temp = makeVarList(t);
+    temp->next = l;
+    return temp;
+}
+struct varList* makeVarList(struct tnode *t)
+{
+    struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
+    temp->varName = t->varname;
+    temp->next = NULL;
+    return temp;
+}
+

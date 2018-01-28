@@ -29,6 +29,7 @@
 #define TYPE_INT 101
 #define TYPE_BOOL 102
 #define TYPE_NULL 103
+#define TYPE_STR 104
 
 typedef struct tnode
 {
@@ -39,6 +40,11 @@ typedef struct tnode
 	struct tnode *ptr1,*ptr2, *ptr3;
 }tnode;
 
+typedef struct varList
+{
+    char *varName;
+    struct varList *next;
+}varList;
 int reg;
 FILE *target_file, *fp;
 
@@ -47,3 +53,10 @@ reg_index getReg(void);
 void freeReg(void);
 void print(struct tnode *t);
 struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2, struct tnode *ptr3);
+void semanticCheck(struct tnode *t);
+void yyerror(char const *s);
+void declareVariables(int type, struct varList *l);
+struct varList* appendVariable(struct varList *l, struct tnode *t);
+struct varList* makeVarList(struct tnode *t);
+
+

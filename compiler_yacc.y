@@ -16,17 +16,33 @@
 
 %}
 
-%token ID NUM START END READ WRITE ASSIGN PLUS MINUS MUL DIV IF THEN ELSE ENDIF WHILE DO ENDWHILE BREAK CONTINUE
+%token ID NUM START END READ WRITE ASSIGN PLUS MINUS MUL DIV IF THEN ELSE ENDIF WHILE DO ENDWHILE BREAK CONTINUE DECL ENDDECL INT STR
 %left PLUS MINUS
 %left MUL DIV
 %nonassoc LT LE GT GE NE EQ
 
 %%
 
-program	: START Slist END	{print($2); exit(1);}
-	| START END		{print(NULL); exit(1);}
-	;
+program: Declarations instructions | instructions;
+instructions:   START Slist END	{print($2); exit(1);}
+	       | START END		{print(NULL); exit(1);}    
 
+Declarations :  DECL DeclList ENDDECL    {$$ = NULL;}
+                | DECL ENDDECL          {$$ = NULL;}
+                ;
+DeclList    :   DeclList Decl            {$$ = NULL;}
+                | Decl                  {$$ = NULL;}
+                ;
+Decl        :   Type VarList ';'        {declareVariables($1, $2);$$ = NULL;}
+                ;
+Type        :   INT {$$ = TYPE_INT;}
+                | STR {$$ = TYPE_STR;}
+            ;
+VarList     :   VarList ',' ID {$$ = appendVariable($1, $2);}
+                | ID {$$ = makeVarList($1);}
+                ;
+
+	;
 Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL);}
 	| Stmt		{$$=$1;}
 	;

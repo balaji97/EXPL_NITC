@@ -44,13 +44,13 @@
 "int"   {return INT;}
 "string"    {return STR;}
 
-[a-z] {
+[a-z]+ {
 		strval=strdup(yytext);
 		yylval=createTree(0, NODE_VAR, TYPE_INT, strval, NULL, NULL, NULL);
 		return ID;}
-["']([a-z]+)["'] {
+["']([a-z0-9A-Z .,+\-*/=_:><?!@#$%^&\t\n]+)["'] {
                     strval = strdup(yytext);
-                    yylval = createTree(0, NODE_VAR, TYPE_STR, strval, NULL, NULL, NULL);
+                    yylval = createTree(0, NODE_NUM, TYPE_STR, strval, NULL, NULL, NULL);
                     return NUM;
 }
     
@@ -68,7 +68,7 @@
 "!="	{return NE;}
 
 [\n \t] {}
-[();] 	{return *yytext;}
+[();,] 	{return *yytext;}
 . 	{
 		yyerror("unknown character\n");
 		exit(1);

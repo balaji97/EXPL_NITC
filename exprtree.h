@@ -48,6 +48,16 @@ typedef struct varList
 int reg;
 FILE *target_file, *fp;
 
+typedef struct Gsymbol
+{
+    char *name;
+    int type, size, binding;
+    struct Gsymbol *next;
+}Gsymbol;
+struct Gsymbol *symbol_top = NULL;
+
+int sp = 4096; 
+
 reg_index codeGen(struct tnode *t);
 reg_index getReg(void);
 void freeReg(void);
@@ -59,4 +69,9 @@ void declareVariables(int type, struct varList *l);
 struct varList* appendVariable(struct varList *l, struct tnode *t);
 struct varList* makeVarList(struct tnode *t);
 
+struct Gsymbol* lookup(char *s);
+void install(char *name, int type, int size);
 
+int alloc(void);
+
+void printSymbolTable();

@@ -1,3 +1,4 @@
+//Register Allocation for code generation
 reg_index getReg(){
 	if(reg>=20){
 		printf("Out of registers\n");
@@ -10,21 +11,71 @@ void freeReg(){
 	if(reg>=0)
 		reg--;
 }
+
+
+//Loop structure for using break and continue
 struct loop
 {
     int a, b;
     struct loop *next;
 } *l = NULL;
+
+
+//Assigning labels for JMP statements in code generation
 int labelCount = 0;
+
 int getLabel()
 {
     return labelCount++;
 }
+
 int retLabel()
 {
     return (labelCount - 1);
 }
 
+
+//Allocates mamory for local variables
+int alloc()
+{
+    if(sp > 5118)
+        yyerror("Stack overflow!\n");
+    else
+        return sp++;
+}
+
+
+//Symbol table structure
+
+//Finds entry with specified name in symbol table
+struct Gsymbol *lookup(char *name)
+{
+    struct Gsymbol *temp = symbol_top;
+    while(temp != NULL)
+    {
+        if(strcmp(name, temp->name) == 0)
+            break;
+        temp = temp->next;
+    }
+    return temp;
+}
+//Appends a new entry to symbol table
+void install(char *name, int type, int size)
+{
+    if(lookup(name) != NULL)
+        yyerror("Variable redeclared!\n");
+    struct Gsymbol *temp;
+    temp = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+    temp->name = name;
+    temp->type = type;
+    temp->size = size;
+    temp->binding = alloc();
+    temp->next = symbol_top;
+    symbol_top = temp;
+}
+
+
+//Recursively traverses AST and generates corresponding XSM code
 reg_index codeGen(struct tnode *t)
 {
     int label_1, label_2, label_3;
@@ -38,8 +89,11 @@ reg_index codeGen(struct tnode *t)
             if(t->type == TYPE_INT)
                 fprintf(target_file, "MOV R%d, %d\n", r1, t->val);
             else
-                fprintf(target_file, "MOV R%d, \"%s\"\n", r1, t->varname);
-			return r1;
+            {
+                fprintf(target_file, "MOV R%d, %s\n", r1, t->varname);
+               
+            }
+            return r1;
 		case NODE_VAR:
 			r1=getReg();
 			r2=(int)t->varname[0];
@@ -202,16 +256,19 @@ reg_index codeGen(struct tnode *t)
 	return r1;
 }
 
+
+//Prints first few lines of XEXE file, and calls codeGen()
 void print(struct tnode *t){
     int i;
 	fprintf(target_file, "0\n2056\n0\n0\n0\n0\n0\n0\n");
-	fprintf(target_file, "MOV SP, 4121\n");
+	fprintf(target_file, "MOV SP, %d\n", sp);
 	if(t!=NULL)
 		reg=codeGen(t);
 	fprintf(target_file, "INT 10\n");
 }
 
 
+//Prints AST nodes inorder
 void inorder(struct tnode *t)
 {
     if(t == NULL)
@@ -222,6 +279,8 @@ void inorder(struct tnode *t)
     inorder(t->ptr3);
 }
 
+
+//Creates a new node for AST with given parameters
 struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3)
 {
 	struct tnode *temp;
@@ -229,18 +288,57 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 	temp->nodetype=nodetype;
     temp->type = type;
     temp->varname = NULL;
-	if(nodetype == NODE_VAR)
+	if(c != NULL)
     {
 		temp->varname=malloc(sizeof(c));
         strcpy(temp->varname, c);
 	}
+    if(temp->nodetype == NODE_ASSIGN)
+        ptr1->type = ptr2->type;
     temp->val = val;
 	temp->ptr1=ptr1;
 	temp->ptr2=ptr2;
     temp->ptr3=ptr3;
     semanticCheck(temp);
+    /*
+    printf("Node created %d %d %d\n", temp->val, temp->nodetype,  temp->type);
+    if(temp->varname != NULL)
+        printf("%s\n", temp->varname);
+    if(temp->ptr1 != NULL)
+    {
+        printf("First child %d %d\n", temp->ptr1->nodetype, temp->ptr1->type);
+        if(temp->ptr1->varname != NULL)
+            printf("%s\n", temp->ptr1->varname);
+    }
+    if(temp->ptr2 != NULL)
+    {
+        printf("Second child %d %d\n", temp->ptr2->nodetype, temp->ptr2->type);
+        if(temp->ptr2->varname != NULL)
+            printf("%s\n", temp->ptr2->varname);
+    }
+    if(temp->ptr3 != NULL)
+    {
+        printf("Third child %d %d\n", temp->ptr3->nodetype, temp->ptr3->type);
+        if(temp->ptr3->varname != NULL)
+            printf("%s\n", temp->ptr3->varname);
+    }*/
+    declCheck(ptr1);
+    declCheck(ptr2);
+    declCheck(ptr3);
     return temp;
 }
+
+//Checks if the node variable has been declared
+void declCheck(struct tnode *t)
+{
+    if(t == NULL)
+        return;
+    if(t->nodetype != NODE_VAR)
+        return;
+    if(lookup(t->varname) == NULL)
+        yyerror("Error! Undeclared variable.\n");
+}
+//Checks for type mismatch and other semantic errors
 void semanticCheck(struct tnode *t)
 {
     switch(t->nodetype)
@@ -257,7 +355,7 @@ void semanticCheck(struct tnode *t)
         case NODE_MUL   :
         case NODE_DIV   :
                         t->type = t->ptr1->type;
-                        if(t->type != t->ptr2->type || t->type != TYPE_INT)
+                        if(t->type != t->ptr2->type || t->type != TYPE_INT || t->ptr2->type != TYPE_INT)
                         {
                             yyerror("Error. Operator type mismatch!\n");
                         }
@@ -270,27 +368,47 @@ void semanticCheck(struct tnode *t)
         case NODE_EQ    :
                         if(t->ptr1->type != t->ptr2->type)
                             yyerror("Error. Comparision type mismatch.\n");
+        case NODE_ASSIGN:  
                         break;
         default:
                         break;
                         
     }
 }
-void declareVariables(int type, struct varList *l)
+
+void printSymbolTable()
 {
-    printf("Following variables of type %d declared:\n", type);
-    while(l != NULL)
+    struct Gsymbol *temp = symbol_top;
+    while(temp != NULL)
     {
-        printf("%s\n", l->varName);
-        l = l->next;
+        printf("Name:%s\nType:%d\nSize:%d\nBinding:%d\n", temp->name, temp->type, temp->size, temp->binding);
+        temp = temp->next;
     }
 }
+
+
+//Declares variables of given type from the varlist
+void declareVariables(int type, struct varList *l)
+{
+//    printf("Following variables of type %d declared:\n", type);
+    while(l != NULL)
+    {
+        install(l->varName, type, 1);
+        l = l->next;
+    }    
+}
+
+
+//Appends a new variable name to varlist
 struct varList* appendVariable(struct varList *l, struct tnode *t)
 {
     struct varList *temp = makeVarList(t);
     temp->next = l;
     return temp;
 }
+
+
+//initialises varlist
 struct varList* makeVarList(struct tnode *t)
 {
     struct varList *temp = (struct varList*)malloc(sizeof(struct varList));

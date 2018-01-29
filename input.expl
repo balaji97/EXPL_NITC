@@ -1,17 +1,23 @@
 decl
-    int a, b, cc;
-    string a, name, mark;
+    int a, i, b, n;
 enddecl
 begin
-    a = 1;
-    b = 0;
-    while(b < 100) do
+    a = 0;
+    b = 1;
+    read(n);
+    i = 0;
+    if(n > 0) then
         write(a);
-        if(b == 10) then
-            break;
-        endif;
-        b = b + 1;
+    endif;
+    if(n > 1) then
+        write(b);
+    endif;
+    n = n-2;
+    while(i < n) do
+        write(a+b);
+        b = a+b;
+        a = b-a;
+        i = i+1;
     endwhile;
-    b = "hello";
-    write("hello");   
+    
 end

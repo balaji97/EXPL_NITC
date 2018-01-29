@@ -37,6 +37,7 @@ typedef struct tnode
 	int type;
 	char *varname;
 	int nodetype;
+    struct Gsymbol *gentry;
 	struct tnode *ptr1,*ptr2, *ptr3;
 }tnode;
 

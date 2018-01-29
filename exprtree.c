@@ -66,9 +66,11 @@ void install(char *name, int type, int size)
         yyerror("Variable redeclared!\n");
     struct Gsymbol *temp;
     temp = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+    
     temp->name = name;
     temp->type = type;
     temp->size = size;
+    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
     temp->binding = alloc();
     temp->next = symbol_top;
     symbol_top = temp;
@@ -94,10 +96,12 @@ reg_index codeGen(struct tnode *t)
                
             }
             return r1;
+            break;
 		case NODE_VAR:
 			r1=getReg();
-			r2=(int)t->varname[0];
-			fprintf(target_file, "MOV R%d, [%d]\n", r1, 4096+r2-'a');
+			r2=lookup(t->varname)->binding;
+            
+			fprintf(target_file, "MOV R%d, [%d]\n", r1, r2);
 			
 			return r1;
 		case NODE_PLUS:
@@ -126,8 +130,8 @@ reg_index codeGen(struct tnode *t)
 			break;
 		case NODE_ASSIGN:
 			r1=codeGen(t->ptr2);
-			r2=(int)t->ptr1->varname[0];
-			fprintf(target_file, "MOV [%d], R%d\n", 4096+r2-'a', r1);
+			r2=lookup(t->ptr1->varname)->binding;
+			fprintf(target_file, "MOV [%d], R%d\n", r2, r1);
 			freeReg();
 			break;
 		case NODE_WRITE:
@@ -148,12 +152,12 @@ reg_index codeGen(struct tnode *t)
 			freeReg();
 			break;
 		case NODE_READ:
-			r1=(int)t->ptr1->varname[0];
+			r1=lookup(t->ptr1->varname)->binding;
 			fprintf(target_file, "MOV R2, \"Read\"\n");
 			fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "MOV R2, -1\n");
 			fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "MOV R2, %d\n", 4096+r1-'a');
+			fprintf(target_file, "MOV R2, %d\n",r1);
 			fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "PUSH R2\n");
@@ -293,15 +297,19 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 		temp->varname=malloc(sizeof(c));
         strcpy(temp->varname, c);
 	}
-    if(temp->nodetype == NODE_ASSIGN)
-        ptr1->type = ptr2->type;
     temp->val = val;
 	temp->ptr1=ptr1;
 	temp->ptr2=ptr2;
     temp->ptr3=ptr3;
-    semanticCheck(temp);
-    /*
-    printf("Node created %d %d %d\n", temp->val, temp->nodetype,  temp->type);
+   
+    
+    declCheck(ptr1);
+    declCheck(ptr2);
+    declCheck(ptr3);
+    
+     semanticCheck(temp);
+    
+    printf("Node created %d %d\n", temp->nodetype,  temp->type);
     if(temp->varname != NULL)
         printf("%s\n", temp->varname);
     if(temp->ptr1 != NULL)
@@ -321,10 +329,8 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
         printf("Third child %d %d\n", temp->ptr3->nodetype, temp->ptr3->type);
         if(temp->ptr3->varname != NULL)
             printf("%s\n", temp->ptr3->varname);
-    }*/
-    declCheck(ptr1);
-    declCheck(ptr2);
-    declCheck(ptr3);
+    }
+    
     return temp;
 }
 
@@ -335,8 +341,11 @@ void declCheck(struct tnode *t)
         return;
     if(t->nodetype != NODE_VAR)
         return;
-    if(lookup(t->varname) == NULL)
+    struct Gsymbol *temp = lookup(t->varname);
+    if(temp == NULL)
         yyerror("Error! Undeclared variable.\n");
+    t->type = temp->type;
+    t->gentry = temp;
 }
 //Checks for type mismatch and other semantic errors
 void semanticCheck(struct tnode *t)
@@ -369,6 +378,8 @@ void semanticCheck(struct tnode *t)
                         if(t->ptr1->type != t->ptr2->type)
                             yyerror("Error. Comparision type mismatch.\n");
         case NODE_ASSIGN:  
+                        if(t->ptr1->type != t->ptr2->type)
+                            yyerror("Error. Assign type mismatch.\n");
                         break;
         default:
                         break;

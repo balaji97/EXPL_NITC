@@ -33,7 +33,7 @@ Declarations :  DECL DeclList ENDDECL    {printSymbolTable();$$ = NULL;}
 DeclList    :   DeclList Decl            {$$ = NULL;}
                 | Decl                  {$$ = NULL;}
                 ;
-Decl        :   Type VarList ';'        {declareVariables($1, $2);$$ = NULL;}
+Decl        :   Type VarList ';'        {printf("Declaring %d\n", $1);declareVariables($1, $2);$$ = NULL;}
                 ;
 Type        :   INT {$$ = TYPE_INT;}
                 | STR {$$ = TYPE_STR;}

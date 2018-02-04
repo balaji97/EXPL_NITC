@@ -1,23 +1,31 @@
 decl
-    int a, i, b, n;
+    int a[20], i, n,k,temp,j;
 enddecl
 begin
-    a = 0;
-    b = 1;
-    read(n);
     i = 0;
-    if(n > 0) then
-        write(a);
-    endif;
-    if(n > 1) then
-        write(b);
-    endif;
-    n = n-2;
-    while(i < n) do
-        write(a+b);
-        b = a+b;
-        a = b-a;
-        i = i+1;
+    read(n);
+    while(i<n) do
+        read(a[i]);
+        i=i+1;
     endwhile;
-    
+    i=0;
+    while(i<n) do
+        j=0;
+        while(j<(n-i-1)) do
+            k=j+1;
+            if(a[j]>a[k]) then
+                temp=a[j];
+                a[j]=a[k];
+                a[k]=temp;
+            endif;
+            j=j+1;
+        endwhile;
+        i=i+1;
+    endwhile;
+    i=0;
+    while(i<n) do
+        write(a[i]);
+        i=i+1;
+    endwhile;
 end
+

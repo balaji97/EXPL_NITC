@@ -36,12 +36,16 @@ int retLabel()
 
 
 //Allocates mamory for local variables
-int alloc()
+int alloc(int size)
 {
-    if(sp > 5118)
+    int ret = sp;
+    sp += size;
+    if(sp - 1 > 5118)
         yyerror("Stack overflow!\n");
     else
-        return sp++;
+    {
+        return ret;
+    }
 }
 
 
@@ -70,8 +74,8 @@ void install(char *name, int type, int size)
     temp->name = name;
     temp->type = type;
     temp->size = size;
-    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
-    temp->binding = alloc();
+//    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
+    temp->binding = alloc(size);
     temp->next = symbol_top;
     symbol_top = temp;
 }
@@ -81,7 +85,7 @@ void install(char *name, int type, int size)
 reg_index codeGen(struct tnode *t)
 {
     int label_1, label_2, label_3;
-	reg_index r1,r2;
+	reg_index r1,r2,r3;
     if(t == NULL)
         return r1;
 	switch(t->nodetype)
@@ -100,9 +104,14 @@ reg_index codeGen(struct tnode *t)
 		case NODE_VAR:
 			r1=getReg();
 			r2=lookup(t->varname)->binding;
-            
-			fprintf(target_file, "MOV R%d, [%d]\n", r1, r2);
-			
+            if(t->index != NULL)
+            {
+                r3=codeGen(t->index);
+                fprintf(target_file, "ADD R%d, %d\n", r3, r2);
+                fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
+            }
+            else
+                fprintf(target_file, "MOV R%d, [%d]\n", r1, r2);
 			return r1;
 		case NODE_PLUS:
 			r1=codeGen(t->ptr1);
@@ -111,11 +120,16 @@ reg_index codeGen(struct tnode *t)
 			freeReg();
 			break;
 		case NODE_MINUS:
+//            fprintf(target_file, "Entering sub, reg = %d\n", reg);
+            
 			r1=codeGen(t->ptr1);
+//            fprintf(target_file, "Mid sub, reg = %d\n", reg);
 			r2=codeGen(t->ptr2);
 			fprintf(target_file, "SUB R%d, R%d\n", r1, r2);
+
+//			fprintf(target_file, "Exiting sub, reg = %d\n", reg);
 			freeReg();
-			break;
+            break;
 		case NODE_MUL:
 			r1=codeGen(t->ptr1);
 			r2=codeGen(t->ptr2);
@@ -131,7 +145,15 @@ reg_index codeGen(struct tnode *t)
 		case NODE_ASSIGN:
 			r1=codeGen(t->ptr2);
 			r2=lookup(t->ptr1->varname)->binding;
-			fprintf(target_file, "MOV [%d], R%d\n", r2, r1);
+            if(t->ptr1->index != NULL)
+            {
+            //    printf("Non array assignment\n");
+                r3=codeGen(t->ptr1->index);
+                fprintf(target_file, "ADD R%d, %d\n", r3, r2);
+                fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
+            }
+            else
+                fprintf(target_file, "MOV [%d], R%d\n", r2, r1);
 			freeReg();
 			break;
 		case NODE_WRITE:
@@ -152,13 +174,22 @@ reg_index codeGen(struct tnode *t)
 			freeReg();
 			break;
 		case NODE_READ:
-			r1=lookup(t->ptr1->varname)->binding;
 			fprintf(target_file, "MOV R2, \"Read\"\n");
 			fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "MOV R2, -1\n");
 			fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "MOV R2, %d\n",r1);
-			fprintf(target_file, "PUSH R2\n");
+			
+            r1=lookup(t->ptr1->varname)->binding;
+            if(t->ptr1->index != NULL)
+            {
+                r3=codeGen(t->ptr1->index);
+                fprintf(target_file, "ADD R%d, %d\n", r3, r1);
+                fprintf(target_file, "MOV R2, R%d\n", r3);
+            }
+            else
+                fprintf(target_file, "MOV R2, %d\n",r1);
+			
+            fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "CALL 0\n");
@@ -173,12 +204,12 @@ reg_index codeGen(struct tnode *t)
             label_2 = getLabel();
             r1 = codeGen(t->ptr1);
             fprintf(target_file, "JZ R%d, L%d\n", r1, label_1);
-            freeReg();
             r1 = codeGen(t->ptr2);
             fprintf(target_file, "JMP L%d\n", label_2);
             fprintf(target_file, "L%d:\n", label_1);
             r1 = codeGen(t->ptr3);
             fprintf(target_file, "L%d:\n", label_2);
+            freeReg();
             break;
         case NODE_WHILE:
             label_1 = getLabel();
@@ -191,11 +222,11 @@ reg_index codeGen(struct tnode *t)
             fprintf(target_file, "L%d:\n", label_1);
             r1 = codeGen(t->ptr1);
             fprintf(target_file, "JZ R%d, L%d\n", r1, label_2);
-            freeReg();
             r1 = codeGen(t->ptr2);
             fprintf(target_file, "JMP L%d\n", label_1);
             fprintf(target_file, "L%d:\n", label_2);
             l = l->next;
+            freeReg();
             break; 
         case NODE_LT:
             r1 = codeGen(t->ptr1);
@@ -256,7 +287,6 @@ reg_index codeGen(struct tnode *t)
 			printf("Error\n");
 			exit(1);
 	}
-	freeReg();
 	return r1;
 }
 
@@ -285,7 +315,7 @@ void inorder(struct tnode *t)
 
 
 //Creates a new node for AST with given parameters
-struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3)
+struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3, struct tnode *index)
 {
 	struct tnode *temp;
 	temp=(struct tnode*)malloc(sizeof(struct tnode));
@@ -301,7 +331,7 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 	temp->ptr1=ptr1;
 	temp->ptr2=ptr2;
     temp->ptr3=ptr3;
-   
+    temp->index = index;
     
     declCheck(ptr1);
     declCheck(ptr2);
@@ -309,7 +339,7 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
     
      semanticCheck(temp);
     
-    printf("Node created %d %d\n", temp->nodetype,  temp->type);
+/*    printf("Node created %d %d\n", temp->nodetype,  temp->type);
     if(temp->varname != NULL)
         printf("%s\n", temp->varname);
     if(temp->ptr1 != NULL)
@@ -330,7 +360,7 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
         if(temp->ptr3->varname != NULL)
             printf("%s\n", temp->ptr3->varname);
     }
-    
+*/    
     return temp;
 }
 
@@ -404,27 +434,29 @@ void declareVariables(int type, struct varList *l)
 //    printf("Following variables of type %d declared:\n", type);
     while(l != NULL)
     {
-        install(l->varName, type, 1);
+        install(l->varName, type, l->size);
         l = l->next;
     }    
 }
 
 
 //Appends a new variable name to varlist
-struct varList* appendVariable(struct varList *l, struct tnode *t)
+struct varList* appendVariable(struct varList *l, struct tnode *t, int size)
 {
-    struct varList *temp = makeVarList(t);
+    struct varList *temp = makeVarList(t, size);
     temp->next = l;
+    temp->size = size;
     return temp;
 }
 
 
 //initialises varlist
-struct varList* makeVarList(struct tnode *t)
+struct varList* makeVarList(struct tnode *t, int size)
 {
     struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
     temp->varName = t->varname;
     temp->next = NULL;
+    temp->size = size;
     return temp;
 }
 

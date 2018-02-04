@@ -37,6 +37,7 @@ typedef struct tnode
 	int type;
 	char *varname;
 	int nodetype;
+    struct tnode *index;
     struct Gsymbol *gentry;
 	struct tnode *ptr1,*ptr2, *ptr3;
 }tnode;
@@ -44,6 +45,7 @@ typedef struct tnode
 typedef struct varList
 {
     char *varName;
+    int size;
     struct varList *next;
 }varList;
 int reg;
@@ -63,16 +65,19 @@ reg_index codeGen(struct tnode *t);
 reg_index getReg(void);
 void freeReg(void);
 void print(struct tnode *t);
-struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2, struct tnode *ptr3);
+struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2, struct tnode *ptr3, struct tnode *index);
 void semanticCheck(struct tnode *t);
 void yyerror(char const *s);
 void declareVariables(int type, struct varList *l);
-struct varList* appendVariable(struct varList *l, struct tnode *t);
-struct varList* makeVarList(struct tnode *t);
+struct varList* appendVariable(struct varList *l, struct tnode *t, int size);
+struct varList* makeVarList(struct tnode *t, int size);
+
+void declCheck(struct tnode *t);
+
 
 struct Gsymbol* lookup(char *s);
 void install(char *name, int type, int size);
 
-int alloc(void);
+int alloc(int size);
 
 void printSymbolTable();

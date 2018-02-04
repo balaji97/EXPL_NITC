@@ -24,7 +24,7 @@
 
 [0-9]+ {
 		intval=atoi(yytext);
-		yylval=createTree(intval, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL);
+		yylval=createTree(intval, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL);
 		return NUM;}
 "begin"	{return START;}
 "end"	{return END;}
@@ -46,11 +46,11 @@
 
 [a-z]+ {
 		strval=strdup(yytext);
-		yylval=createTree(0, NODE_VAR, TYPE_INT, strval, NULL, NULL, NULL);
+		yylval=createTree(0, NODE_VAR, TYPE_INT, strval, NULL, NULL, NULL, NULL);
 		return ID;}
 ["']([a-z0-9A-Z .,+\-*/=_:><?!@#$%^&\t\n]+)["'] {
                     strval = strdup(yytext);
-                    yylval = createTree(0, NODE_NUM, TYPE_STR, strval, NULL, NULL, NULL);
+                    yylval = createTree(0, NODE_NUM, TYPE_STR, strval, NULL, NULL, NULL, NULL);
                     return NUM;
 }
     
@@ -68,7 +68,7 @@
 "!="	{return NE;}
 
 [\n \t] {}
-[();,] 	{return *yytext;}
+[();,\[\]] 	{return *yytext;}
 . 	{
 		yyerror("unknown character\n");
 		exit(1);

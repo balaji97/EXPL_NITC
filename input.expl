@@ -1,34 +1,14 @@
 decl
-    int a[10][10],b[10][10],i, na,nb,k,temp,j;
+    int a[10], b, *p, i, n;
 enddecl
 begin
-    read(na);
+    n=5;
     i=0;
-    while(i<na) do
-        j=0;
-        while(j<na) do
-            read(a[i][j]);
-            j=j+1;
-        endwhile;
+    while(i<n) do
+        read(a[i]);
         i=i+1;
     endwhile;
-    i=0;
-    while(i<na) do
-        j=0;
-        while(j<na) do
-            read(b[i][j]);
-            j=j+1;
-        endwhile;
-        i=i+1;
-    endwhile;
-    i=0;
-    while(i<na) do
-        j=0;
-        while(j<na) do
-            write(a[i][j]*b[i][j]);
-            j=j+1;
-        endwhile;
-        i=i+1;
-    endwhile;
+    p = &a;
+    p=p+3;
+    write(*p);
 end
-

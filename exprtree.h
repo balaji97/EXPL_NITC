@@ -26,10 +26,16 @@
 #define NODE_BREAK 19
 #define NODE_CONTINUE 20
 
+#define NODE_PTR 21
+
 #define TYPE_INT 101
 #define TYPE_BOOL 102
 #define TYPE_NULL 103
 #define TYPE_STR 104
+#define TYPE_PTR 105
+
+#define TRUE 1
+#define FALSE 0
 
 typedef struct tnode
 {
@@ -45,7 +51,7 @@ typedef struct tnode
 typedef struct varList
 {
     char *varName;
-    int size, rows;
+    int size, rows, ispointer;
     struct varList *next;
 }varList;
 int reg;
@@ -54,7 +60,7 @@ FILE *target_file, *fp;
 typedef struct Gsymbol
 {
     char *name;
-    int type, size, binding, rows;
+    int type, size, binding, rows, ispointer;
     struct Gsymbol *next;
 }Gsymbol;
 struct Gsymbol *symbol_top = NULL;
@@ -69,14 +75,14 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 void semanticCheck(struct tnode *t);
 void yyerror(char const *s);
 void declareVariables(int type, struct varList *l);
-struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows);
-struct varList* makeVarList(struct tnode *t, int size, int rows);
+struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows, int ispointer);
+struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer);
 
 void declCheck(struct tnode *t);
 
 
 struct Gsymbol* lookup(char *s);
-void install(char *name, int type, int size, int rows);
+void install(char *name, int type, int size, int rows, int ispointer);
 
 int alloc(int size);
 

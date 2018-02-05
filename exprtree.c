@@ -65,7 +65,7 @@ struct Gsymbol *lookup(char *name)
     return temp;
 }
 //Appends a new entry to symbol table
-void install(char *name, int type, int size, int rows)
+void install(char *name, int type, int size, int rows, int ispointer)
 {
     if(lookup(name) != NULL)
         yyerror("Variable redeclared!\n");
@@ -76,6 +76,7 @@ void install(char *name, int type, int size, int rows)
     temp->type = type;
     temp->size = size;
     temp->rows = rows;
+    temp->ispointer = ispointer;
 //    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
     temp->binding = alloc(size);
     temp->next = symbol_top;
@@ -104,6 +105,7 @@ reg_index codeGen(struct tnode *t)
             return r1;
             break;
 		case NODE_VAR:
+        case NODE_PTR:
 			r1=getReg();
 			r2=lookup(t->varname)->binding;
             if(t->index1 != NULL)
@@ -120,8 +122,18 @@ reg_index codeGen(struct tnode *t)
                 fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
             }
             else
-                fprintf(target_file, "MOV R%d, [%d]\n", r1, r2);
-			return r1;
+            {
+                if(t->nodetype == NODE_PTR)
+                {
+                    r3 = getReg();
+                    fprintf(target_file, "MOV R%d, [%d]\n", r3, r2);
+                    fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
+                    freeReg();
+                }
+                else
+                    fprintf(target_file, "MOV R%d, [%d]\n", r1, r2);
+            }
+            return r1;
 		case NODE_PLUS:
 			r1=codeGen(t->ptr1);
 			r2=codeGen(t->ptr2);
@@ -169,8 +181,18 @@ reg_index codeGen(struct tnode *t)
                 fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
             }
             else
-                fprintf(target_file, "MOV [%d], R%d\n", r2, r1);
-			freeReg();
+            {
+                if(t->ptr1->nodetype == NODE_PTR)
+                {
+                    r3 = getReg();
+                    fprintf(target_file, "MOV R%d, [%d]\n", r3, r2);    
+                    fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
+                    freeReg();
+                }
+                else
+                    fprintf(target_file, "MOV [%d], R%d\n", r2, r1);
+            }
+            freeReg();
 			break;
 		case NODE_WRITE:
 			r1=codeGen(t->ptr1);
@@ -210,7 +232,12 @@ reg_index codeGen(struct tnode *t)
                 fprintf(target_file, "MOV R2, R%d\n", r3);
             }
             else
-                fprintf(target_file, "MOV R2, %d\n",r1);
+            {
+                if(t->ptr1->nodetype == NODE_PTR)
+                    fprintf(target_file, "MOV R2, [%d]\n",r1);
+                else
+                    fprintf(target_file, "MOV R2, %d\n",r1);
+            }
 			
             fprintf(target_file, "PUSH R2\n");
 			fprintf(target_file, "PUSH R2\n");
@@ -444,10 +471,10 @@ void semanticCheck(struct tnode *t)
 void printSymbolTable()
 {
     struct Gsymbol *temp = symbol_top;
-    printf("Name\tType\tSize\tRows\tBinding\n");
+    printf("Name\tType\tSize\tRows\tPointer\tBinding\n");
     while(temp != NULL)
     {
-        printf("%s\t%d\t%d\t%d\t%d\n", temp->name, temp->type, temp->size, temp->rows, temp->binding);
+        printf("%s\t%d\t%d\t%d\t%d\t%d\n", temp->name, temp->type, temp->size, temp->rows, temp->ispointer, temp->binding);
         temp = temp->next;
     }
 }
@@ -459,29 +486,30 @@ void declareVariables(int type, struct varList *l)
 //    printf("Following variables of type %d declared:\n", type);
     while(l != NULL)
     {
-        install(l->varName, type, l->size, l->rows);
+        install(l->varName, type, l->size, l->rows, l->ispointer);
         l = l->next;
     }    
 }
 
 
 //Appends a new variable name to varlist
-struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows)
+struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows, int ispointer)
 {
-    struct varList *temp = makeVarList(t, size, rows);
+    struct varList *temp = makeVarList(t, size, rows, ispointer);
     temp->next = l;
     return temp;
 }
 
 
 //initialises varlist
-struct varList* makeVarList(struct tnode *t, int size, int rows)
+struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer)
 {
     struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
     temp->varName = t->varname;
     temp->next = NULL;
     temp->size = size;
     temp->rows = rows;
+    temp->ispointer = ispointer;
     return temp;
 }
 

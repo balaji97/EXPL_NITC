@@ -38,14 +38,14 @@ Decl        :   Type VarList ';'        {declareVariables($1, $2);$$ = NULL;}
 Type        :   INT {$$ = TYPE_INT;}
                 | STR {$$ = TYPE_STR;}
             ;
-VarList     :   VarList ',' ID {$$ = appendVariable($1, $3, 1, 1);}
+VarList     :   VarList ',' ID {$$ = appendVariable($1, $3, 1, 1, FALSE);}
                 | VarList ',' ID '[' NUM ']' 
                 {
                     if($5->val <= 0)
                         yyerror("Invalid array decl\n");
                     int size = $5->val;
                     int rows = 1;
-                    $$ = appendVariable($1, $3, size, rows);
+                    $$ = appendVariable($1, $3, size, rows, FALSE);
                 }
                 | VarList ',' ID '[' NUM ']' '[' NUM ']'
                 {
@@ -53,16 +53,16 @@ VarList     :   VarList ',' ID {$$ = appendVariable($1, $3, 1, 1);}
                         yyerror("Invalid array decl\n");
                     int size = ($5->val) * ($8->val);
                     int rows = $5->val;
-                    $$ = appendVariable($1, $3, size, rows);
+                    $$ = appendVariable($1, $3, size, rows, FALSE);
                 }
-                | ID {$$ = makeVarList($1, 1, 1);}
+                | ID {$$ = makeVarList($1, 1, 1, FALSE);}
                 | ID '[' NUM ']' 
                 {
                      if($3->val <= 0)
                         yyerror("Invalid array decl\n");
                     int size = $3->val;
                     int rows = 1;
-                    $$ = makeVarList($1, size, rows);
+                    $$ = makeVarList($1, size, rows, FALSE);
                 }
                 | ID '[' NUM ']' '[' NUM ']'
                 {
@@ -70,8 +70,10 @@ VarList     :   VarList ',' ID {$$ = appendVariable($1, $3, 1, 1);}
                         yyerror("Invalid array decl\n");
                     int size = ($3->val) * ($6->val);
                     int rows = $3->val;
-                    $$ = makeVarList($1, size, rows);
+                    $$ = makeVarList($1, size, rows, FALSE);
                 }
+                | VarList ',' MUL ID    {$$ = appendVariable($1, $4, 1, 1, TRUE);}
+                | MUL ID                {$$ = makeVarList($2, 1, 1, TRUE);}
                 ;
 
 	;
@@ -112,6 +114,7 @@ E :   E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL, NULL,
     | E EQ E 	{$$=createTree(0, NODE_EQ, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
     | '(' E ')' {$$=$2;}
 	| NUM       {$$ = $1;}
+    | '&' ID    {$$ = createTree(lookup($2->varname)->binding, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
     | AsgE      {$$ = $1;}
 	;
 AsgE:   | ID	    {$$=$1;}
@@ -130,6 +133,11 @@ AsgE:   | ID	    {$$=$1;}
             $$ = $1; 
             $$->index1 = $3; 
             $$->index2 = $6;
+        }
+        | MUL ID
+        {
+            $$ = $2;
+            $$->nodetype = NODE_PTR;
         }
     ;
 %%

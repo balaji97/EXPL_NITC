@@ -1,5 +1,6 @@
 //Register Allocation for code generation
-reg_index getReg(){
+reg_index getReg()
+{
 	if(reg>=20){
 		printf("Out of registers\n");
 		exit(1);
@@ -64,7 +65,7 @@ struct Gsymbol *lookup(char *name)
     return temp;
 }
 //Appends a new entry to symbol table
-void install(char *name, int type, int size)
+void install(char *name, int type, int size, int rows)
 {
     if(lookup(name) != NULL)
         yyerror("Variable redeclared!\n");
@@ -74,6 +75,7 @@ void install(char *name, int type, int size)
     temp->name = name;
     temp->type = type;
     temp->size = size;
+    temp->rows = rows;
 //    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
     temp->binding = alloc(size);
     temp->next = symbol_top;
@@ -85,7 +87,7 @@ void install(char *name, int type, int size)
 reg_index codeGen(struct tnode *t)
 {
     int label_1, label_2, label_3;
-	reg_index r1,r2,r3;
+	reg_index r1,r2,r3, r4, r5;
     if(t == NULL)
         return r1;
 	switch(t->nodetype)
@@ -104,9 +106,16 @@ reg_index codeGen(struct tnode *t)
 		case NODE_VAR:
 			r1=getReg();
 			r2=lookup(t->varname)->binding;
-            if(t->index != NULL)
+            if(t->index1 != NULL)
             {
-                r3=codeGen(t->index);
+                r3=codeGen(t->index1);
+                r5 = lookup(t->varname)->rows;
+                fprintf(target_file, "MUL R%d, %d\n", r3, r5);
+                if(t->index2 != NULL)
+                {
+                    r4 = codeGen(t->index2);
+                    fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
+                }
                 fprintf(target_file, "ADD R%d, %d\n", r3, r2);
                 fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
             }
@@ -145,10 +154,17 @@ reg_index codeGen(struct tnode *t)
 		case NODE_ASSIGN:
 			r1=codeGen(t->ptr2);
 			r2=lookup(t->ptr1->varname)->binding;
-            if(t->ptr1->index != NULL)
+            if(t->ptr1->index1 != NULL)
             {
             //    printf("Non array assignment\n");
-                r3=codeGen(t->ptr1->index);
+                r3=codeGen(t->ptr1->index1);
+                r5 = lookup(t->ptr1->varname)->rows;
+                fprintf(target_file, "MUL R%d, %d\n", r3, r5);
+                if(t->ptr1->index2 != NULL)
+                {
+                    r4 = codeGen(t->ptr1->index2);
+                    fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
+                }
                 fprintf(target_file, "ADD R%d, %d\n", r3, r2);
                 fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
             }
@@ -180,9 +196,16 @@ reg_index codeGen(struct tnode *t)
 			fprintf(target_file, "PUSH R2\n");
 			
             r1=lookup(t->ptr1->varname)->binding;
-            if(t->ptr1->index != NULL)
+            if(t->ptr1->index1 != NULL)
             {
-                r3=codeGen(t->ptr1->index);
+                r3=codeGen(t->ptr1->index1);
+                r5 = lookup(t->ptr1->varname)->rows;
+                fprintf(target_file, "MUL R%d, %d\n", r3, r5);
+                if(t->ptr1->index2 != NULL)
+                {
+                    r4 = codeGen(t->ptr1->index2);
+                    fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
+                }
                 fprintf(target_file, "ADD R%d, %d\n", r3, r1);
                 fprintf(target_file, "MOV R2, R%d\n", r3);
             }
@@ -315,7 +338,7 @@ void inorder(struct tnode *t)
 
 
 //Creates a new node for AST with given parameters
-struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3, struct tnode *index)
+struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3, struct tnode *index1, struct tnode *index2)
 {
 	struct tnode *temp;
 	temp=(struct tnode*)malloc(sizeof(struct tnode));
@@ -331,7 +354,8 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 	temp->ptr1=ptr1;
 	temp->ptr2=ptr2;
     temp->ptr3=ptr3;
-    temp->index = index;
+    temp->index1 = index1;
+    temp->index2 = index2;
     
     declCheck(ptr1);
     declCheck(ptr2);
@@ -420,9 +444,10 @@ void semanticCheck(struct tnode *t)
 void printSymbolTable()
 {
     struct Gsymbol *temp = symbol_top;
+    printf("Name\tType\tSize\tRows\tBinding\n");
     while(temp != NULL)
     {
-        printf("Name:%s\nType:%d\nSize:%d\nBinding:%d\n", temp->name, temp->type, temp->size, temp->binding);
+        printf("%s\t%d\t%d\t%d\t%d\n", temp->name, temp->type, temp->size, temp->rows, temp->binding);
         temp = temp->next;
     }
 }
@@ -434,29 +459,29 @@ void declareVariables(int type, struct varList *l)
 //    printf("Following variables of type %d declared:\n", type);
     while(l != NULL)
     {
-        install(l->varName, type, l->size);
+        install(l->varName, type, l->size, l->rows);
         l = l->next;
     }    
 }
 
 
 //Appends a new variable name to varlist
-struct varList* appendVariable(struct varList *l, struct tnode *t, int size)
+struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows)
 {
-    struct varList *temp = makeVarList(t, size);
+    struct varList *temp = makeVarList(t, size, rows);
     temp->next = l;
-    temp->size = size;
     return temp;
 }
 
 
 //initialises varlist
-struct varList* makeVarList(struct tnode *t, int size)
+struct varList* makeVarList(struct tnode *t, int size, int rows)
 {
     struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
     temp->varName = t->varname;
     temp->next = NULL;
     temp->size = size;
+    temp->rows = rows;
     return temp;
 }
 

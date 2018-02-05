@@ -19,13 +19,7 @@
 %}
 
 %%
-
-
-
-[0-9]+ {
-		intval=atoi(yytext);
-		yylval=createTree(intval, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);
-		return NUM;}
+        
 "begin"	{return START;}
 "end"	{return END;}
 "decl"  {return DECL;}
@@ -44,10 +38,14 @@
 "int"   {return INT;}
 "string"    {return STR;}
 
-[a-z]+ {
+[a-zA-Z]([a-zA-Z0-9]*) {
 		strval=strdup(yytext);
 		yylval=createTree(0, NODE_VAR, TYPE_INT, strval, NULL, NULL, NULL, NULL, NULL);
 		return ID;}
+[0-9]+ {
+		intval=atoi(yytext);
+		yylval=createTree(intval, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);
+		return NUM;}
 ["']([a-z0-9A-Z .,+\-*/=_:><?!@#$%^&\t\n]+)["'] {
                     strval = strdup(yytext);
                     yylval = createTree(0, NODE_NUM, TYPE_STR, strval, NULL, NULL, NULL, NULL, NULL);

@@ -1,14 +1,17 @@
 decl
-    int a[10], b, *p, i, n;
+    int a[10][10], i, j, n;
+    string p;
 enddecl
 begin
-    n=5;
+    n = 3;
     i=0;
     while(i<n) do
-        read(a[i]);
+        j=0;
+        while(j<n) do
+            read(a[i][j]);
+            j=j+1;
+        endwhile;
         i=i+1;
     endwhile;
-    p = &a;
-    p=p+3;
-    write(*p);
+    write(a[0+1][1+1]);
 end

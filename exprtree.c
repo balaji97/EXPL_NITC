@@ -117,9 +117,11 @@ reg_index codeGen(struct tnode *t)
                 {
                     r4 = codeGen(t->index2);
                     fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
+                    freeReg();
                 }
                 fprintf(target_file, "ADD R%d, %d\n", r3, r2);
                 fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
+                freeReg();
             }
             else
             {
@@ -179,6 +181,8 @@ reg_index codeGen(struct tnode *t)
                 }
                 fprintf(target_file, "ADD R%d, %d\n", r3, r2);
                 fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
+                freeReg();
+                freeReg();
             }
             else
             {
@@ -227,9 +231,12 @@ reg_index codeGen(struct tnode *t)
                 {
                     r4 = codeGen(t->ptr1->index2);
                     fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
+                    freeReg();
                 }
                 fprintf(target_file, "ADD R%d, %d\n", r3, r1);
                 fprintf(target_file, "MOV R2, R%d\n", r3);
+                freeReg();
+                freeReg();
             }
             else
             {

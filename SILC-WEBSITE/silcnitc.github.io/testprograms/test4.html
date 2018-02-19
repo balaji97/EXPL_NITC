@@ -1,0 +1,74 @@
+<!Doctype html>
+<html lang="en">
+
+<!-- Mirrored from silcnitc.github.io/testprograms/test4.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:54:41 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+<title>TESTCASE 4</title>
+<meta charset="UTF-8">
+<link rel="../stylesheet" href="../css/style.css">
+</head>
+<body>
+<pre>
+type
+  node
+  {
+    int d;
+    int s;
+    int t;
+  }
+endtype
+
+decl
+  node y,z,gcd(int a,int b);
+enddecl
+
+node gcd(int a,int b)
+{
+  decl
+    int q,r,temp;
+  enddecl
+
+  begin
+    if(b==0) then
+      y.d = a;
+      y.s = 1;
+      y.t = 0;
+    else
+      q = a/b;
+      r = a%b;
+      z = gcd(b,r);
+      temp = z.s;
+      y.s = z.t;
+      y.t = temp - (q*z.t);
+    endif;
+
+  return y;
+  end
+}
+
+int main()
+{
+  decl
+    node res;
+    int a,b,c;
+  enddecl
+
+  begin
+    c = initialize();
+    y = alloc();
+    read(a);
+    read(b);
+    res = gcd(a,b);
+    write(res.d);
+    write(res.s);
+    write(res.t);
+
+  return 0;
+  end
+}
+</pre>
+</body>
+
+<!-- Mirrored from silcnitc.github.io/testprograms/test4.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:54:41 GMT -->
+</html>

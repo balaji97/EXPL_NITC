@@ -1,0 +1,608 @@
+<!Doctype html>
+<html lang="en">
+
+<!-- Mirrored from silcnitc.github.io/lex.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:51:27 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+<title>LEX</title>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+ <header class="center clearfix" id="navtop"> <a href="index-2.html" class="logo fleft"><img src="img/logo.png" alt=""></a>
+  <nav class="fright">
+    <ul>
+      <li><a href="index-2.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+			<li><a href="help.html">Help</a></li>
+			<li><a href="roadmap.html">Roadmap</a></li>
+			<li><a href="documentation.html" class="navactive">Documentation</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="about center part clearfix">
+<header class="title">
+<h3 class="fleft">Contents</h3>
+</header>
+    <aside class="column4 mright">
+		<menu>
+		<ul>
+		<li><a href="#navintro" class="sec">Introduction</a></li>
+		<li><a href="#navstructure" class="sec">Structure of a LEX Program</a></li>
+		<li><a href="#navvariables" class="sec">yyvariables</a></li>
+		<li><a href="#navfunctions" class="sec">yyfunctions</a></li>
+		<li><a href="#navcompleteexample" class="sec">A complete LEX Program</a></li>
+		<li><a href="#navdisambiguation" class="sec">Disambiguation rules</a></li>
+		<li><a href="#navpatternmatching" class="sec">Pattern Matching Using LEX</a></li>
+		<li><a href="#navsimulator" class="sec">A token simulator program</a></li>
+		<li><a href="#navdfaconstruction" class="sec">DFA -> regular expression</a><li>
+		<li><a href="#navusingthelexicalanalyzer" class="sec">Using the generated lexical analyzer</a></li>
+		<li><a href="#navreferences" class="sec">References</a></li>
+		<li><!--For blank space between lins and download button--> &nbsp;</li>
+		<li><a href="https://github.com/silcnitc/documentation/blob/master/lex/Lex.pdf?raw=true" class="button"> Download as PDF </a></li>
+		<li><!--Blank line for space between download button and main title--> &nbsp;</li>
+		</ul>
+		</menu>
+	</aside>
+
+<section class="columnthird content"><h1 class="mright">USING LEX</h1>
+<article id="navintro" class="detail">
+<h2>Introduction</h2>
+<p>
+<b>LEX</b> is a tool used to generate a lexical analyzer.
+This document is a tutorial for the use of LEX for <b>ExpL Compiler</b> development.
+Technically, LEX translates a set of regular expression specifications (given as input in input_file.l) into a C implementation of a corresponding finite state machine (lex.yy.c). This C program, when compiled, yields an executable lexical analyzer.
+</p>
+<center><img src="img/lex_1.png" style="max-width:70%"></center>
+<p id="token">The source ExpL program is fed as the input to the the lexical analyzer which produces a sequence of tokens as output.
+(Tokens are explained below). Conceptually, a lexical analyzer scans a given source ExpL program and produces an output of tokens.</p>
+<p>Each token is specified by a token name. The token name is an abstract symbol representing the kind of lexical unit, e.g., a particular keyword, or a sequence of input characters denoting an identifier. The token names are the input symbols that the parser processes. For instance integer, boolean, begin, end, if, while etc. are tokens in ExpL.
+
+<pre>
+“integer” &nbsp;	{return ID_TYPE_INTEGER;}
+</pre>
+
+This example demonstrates the specification of a <b>rule</b> in LEX.
+The rule in this example specifies that the lexical analyzer must return the token named  ID_TYPE_INTEGER when the pattern “integer” is found in the input file.
+A rule in a LEX program comprises of a 'pattern' part (specified by a regular expression) and a corresponding (semantic) 'action' part (a sequence of C statements).
+In the above example,  “integer” is the pattern and {return ID_TYPE_INTEGER;} is the corresponding action. The statements in the action part will be executed when the pattern is detected in the input.
+</p>
+
+<p>
+<a href="https://en.wikipedia.org/wiki/Lex_(software)" target="_blank">Lex</a> was developed by <a href="https://en.wikipedia.org/wiki/Mike_Lesk" target="_blank">Mike Lesk</a> and <a href="https://en.wikipedia.org/wiki/Eric_Schmidt" target="_blank">Eric Schmidt</a> at <a href="https://en.wikipedia.org/wiki/Bell_Labs" target="_blank">Bell labs</a>. 
+</p>
+
+</article>
+
+
+
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+
+<article id="navstructure" class="detail">
+<h2>The structure of LEX programs</h2>
+<p>
+A LEX program consists of three sections : <b>Declarations, Rules and Auxiliary functions</b>
+</p>
+
+<pre>
+DECLARATIONS
+
+%%
+
+RULES
+
+%%
+
+AUXILIARY FUNCTIONS
+</pre>
+<h3 id="regdef">2.1 Declarations</h3>     <!--<a id="regdef"></a>-->
+<p>              The declarations section consists of two parts, <b>auxiliary declarations</b> and <b>regular definitions</b>.
+
+            <p>
+               The auxiliary declarations are copied as such by LEX to the output <i>lex.yy.c</i> file. This C code consists of instructions to the C compiler and are not processed by the LEX tool.The auxiliary declarations (which are optional) are written in C language and are enclosed within ' %{ ' and ' %} ' .
+               It is generally used to declare functions, include header files, or define global variables and constants.
+           </p>
+           <p>
+               LEX allows the use of short-hands and extensions to regular expressions for the regular definitions.
+               A regular definition in LEX is of the form :
+               <b>D &nbsp;	R</b> &nbsp;&nbsp; where D is the symbol representing the regular expression R.
+           </p>
+               </p>
+               <p><b>Example:</b></p>
+
+               <script src="https://gist.github.com/vishnupriyam/f32f9ed1666ae8dfb251.js"></script>
+<p>
+</p>
+         <h3>2.2 Rules</h3>
+         <p>
+         Rules in a LEX program consists of two parts :
+         </p>
+         <ol style="list-style:value;list-style-image:;margin:auto;">
+            <li>1. The pattern to be matched</li>
+            <li>2. The corresponding action to be executed</li>
+         </ol>
+
+<p><b> Example:</b></p>
+
+<script src="https://gist.github.com/vishnupriyam/8f0a09e9a8b9b1fec6fa.js"></script>
+
+
+      <p> The pattern to be matched is specified as a regular expression.</p><p>Sample Input/Output for the above example: </p>
+
+<pre>I: 234
+O: number
+
+I: *
+O: operator
+
+I: 2+3
+O: number operator number
+</pre>
+
+
+          <p> LEX obtains the regular expressions of the symbols 'number' and 'op' from
+the declarations section and generates code into a function <i>yylex()</i> in the <i>lex.yy.c</i> file.
+            This function checks the input stream for the first match to one of the patterns
+             specified and executes code in the action part corresponding to the pattern. </p>
+
+
+      <h3>2.3 Auxiliary functions</h3>
+      <p> LEX generates C code for the rules specified in the Rules section and places this code into a single function called <i>yylex()</i>.
+       (To be discussed in detail later).
+        In addition to this LEX generated code, the programmer may wish to add his own code to the <i>lex.yy.c</i> file.
+         The auxiliary functions section allows the programmer to achieve this.</p>
+
+         <p><b> Example:</b></p>
+<div id = "navexl0">
+<script src="https://gist.github.com/vishnupriyam/8b20b6a5f8983990d406.js"></script>
+</div>
+<p>The auxiliary declarations and auxiliary functions are copied as such to the lex.yy.c file
+ </p>
+<p> Once the code is written, <i>lex.yy.c</i> maybe generated using the command <i>lex "filename.l"</i> and compiled as <i> gcc lex.yy.c </i></p>
+  </article>
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+<article id="navvariables" class="detail">
+        <h2>The yyvariables</h2>
+        <p> The following variables are offered by LEX to aid the programmer in designing sophisticated lexical analyzers.
+         These variables are accessible in the LEX program and are automatically declared by LEX in <i>lex.yy.c</i>.</p>
+         <ul>
+        <li> <a href="#navyyin">yyin</a></li>
+        <li> <a href="#navyytext">yytext</a></li>
+        <li> <a href="#navyyleng">yyleng</a></li>
+          </ul>
+          <h3 id="navyyin">3.1 yyin </h3>
+          <p><i>yyin</i> is a variable of the type FILE* and points to the input file.
+            <i>yyin</i> is defined by LEX automatically.
+            If the programmer assigns an input file to <i>yyin</i> in the auxiliary functions section, then <i>yyin</i> is set to point to that file.
+            Otherwise LEX assigns <i>yyin</i> to stdin(console input). </p>
+          <p><b>Example:</b></p>
+<!--Gist hosted at https://gist.github.com/nachivpn/904ca0eb320f1c06d143 -->
+<script src="https://gist.github.com/nachivpn/904ca0eb320f1c06d143.js"></script>
+
+<p><b>Excercise:</b></p>
+<p> In the generated <i>lex.yy.c</i> file, the following code segment can be found under the definition of <i>yylex()</i>.</p>
+
+<pre>if( ! yyin )
+yyin = stdin;
+</pre>
+
+
+<p> Try to locate this code segment in the file <i>lex.yy.c</i>.
+What could be the consequences of removing this code segment from <i>lex.yy.c</i> before compiling it for generating the
+lexical analyzer?
+   The above statement indicates that if the programmer does not define yyin, then yylex() by default sets <i>yyin</i> to the console input.
+ Hence, any re-definition for <i>yyin</i> must be made before invoking <i>yylex()</i>. (This will be explained in detail later). </p>
+
+ <h3 id="navyytext">3.2 yytext </h3>
+ <p> <i>yytext</i> is of type <i>char*</i> and it contains the <i>lexeme</i> currently found.
+   A <b>lexeme</b> is a sequence of characters in the input stream that matches some pattern in the Rules Section.
+   (In fact, it is the first matching sequence in the input from the position pointed to by <i>yyin</i>.)
+
+ Each invocation of the function <i>yylex()</i> results in <i>yytext</i> carrying a pointer to the lexeme found in
+  the input stream by <i>yylex()</i>.
+ The value of yytext will be overwritten after the next <i>yylex()</i> invocation.</p>
+   <p><b>Example:</p></b>
+<!--Gist hosted at "https://gist.github.com/AshwathyTR/72d3534b5e682d92dc2b.js"-->
+<script src="https://gist.github.com/vishnupriyam/efcdca7df8cf18e9d7cf.js"></script>
+
+<p> In the above example, if a lexeme is found for the pattern defined by number then corresponding action is executed .
+Consider the following sample i/o,</p>
+        <br>
+        Sample Input/Output:
+
+<pre>I: 25
+O: Found : 25
+</pre>
+
+<p> In this case when <i>yylex()</i> is called, the input is read from the location given by <i>yyin</i> and a string “25” is found as a match to
+'number'.
+This location of this string in the memory is pointed to by <i>yytext</i>.
+The corresponding action in the above rule uses a built-in function <i>atoi()</i> to convert the string “25” (of type char*) to the integer 25 (of the type int) and then prints the result on the screen.
+Note that the header file “stdlib.h” is called in the auxiliary declarations section in order to invoke <i>atoi()</i> in
+the actions part of the rule.</p>
+<p>
+NOTE: The lexeme found by LEX is stored in some memory allocated by LEX which can be accessed through the character pointer yytext.
+</p>
+<p>
+NOTE: The <i>%option noyywrap</i> is used to inform the compiler that the function <i>yywrap()</i> has not been defined. We will see what this function does later on.
+</p>
+<p><b>Exercise:</b></p>
+
+<p>Suggest a modification in the above example to check whether a number found is even or odd.</p>
+
+<h3 id="navyyleng">3.3 yyleng </h3>
+<p> <i>yyleng</i> is a variable of the type int and it stores the length of the lexeme pointed to by <i>yytext</i>.</p>
+
+<p><b>Example:</b></p>
+
+<pre>/* Declarations */
+%%
+/* Rules */
+%%
+{number} printf("Number of digits = %d",yyleng);
+</pre>
+Sample Input/Output
+
+<pre>I: 1234
+O: Number of digits = 4
+</pre>
+
+</article>
+
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+
+ <article id="navfunctions" class="detail">
+        <h2>The yyfunctions</h2>
+        <ul>
+     <li> yylex()</li>
+     <li> yywrap()</li>
+         </ul>
+<h3>4.1 &nbsp;yylex()</h3>
+<p> <i>yylex()</i> is a function of return type int. LEX automatically defines <i>yylex()</i> in <i>lex.yy.c</i> but does not call it.
+     The programmer must call yylex() in the Auxiliary functions section of the LEX program.
+    LEX generates code for the definition of yylex() according to the rules specified in the Rules section. </p>
+	<p>NOTE: That yylex() need not necessarily be invoked in the Auxiliary Functions Section of LEX program when used with <a href="yacc.html" target="_blank">YACC</a>.</p>
+     <p><b>Example:</b></p>
+<!-- Gist hosted at -https://gist.github.com/nachivpn/e8177641f819e6b1eee9 -->
+<script src="https://gist.github.com/nachivpn/e8177641f819e6b1eee9.js"></script>
+
+<p> Sample Input/Output :</p>
+
+
+<pre>I: 42
+O: Found: 42
+</pre>
+
+<p> When yylex() is invoked, it reads the input as pointed to by yyin and scans
+through the input looking for a matching pattern. When the input or a part of the input
+matches one of the given patterns, yylex() executes the corresponding action associated
+with the pattern as specified in the Rules section.
+In the above example, since there is no explicit definition of
+ yyin, the input is taken from the console. If a match is found in the
+  input for the pattern <b>number</b>, yylex() executes the corresponding action , i.e.
+   return atoi(yytext). As a result yylex() returns the number matched. The value returned by yylex() is
+    stored in the variable num.
+The value stored in this variable is then printed on screen using printf().</p>
+<p> yylex() continues scanning the input
+ till one of the actions corresponding to a matched pattern
+ executes a return statement or till the end of input has
+  been encountered. In case of the above example, yylex() terminates immediately after executing the rule because it consists
+   of a return statement.
+ <p>Note that if none of the actions in the Rules section executes a return statement, yylex() continues scanning for more matching patterns in the input file till the end of the file.</p>
+  <p> In the case of console input, yylex() would wait for more input through the console. The user will have to input ctrl+d in the terminal to terminate yylex(). If yylex() is called more than once, it simply starts scanning from the position in the input file where it had returned in the previous call.
+    </p>
+<p><b>Exercise:</b></p>
+ <p>
+What would be the outputs of the lexical analyzer generated by
+the example LEX programs under section 3.2 and 4.1 for the following input :
+ <br> 25 <br> 32 <br> 44 <br>
+ Would both the outputs be the same? If not, explain why.
+</p>
+
+
+
+
+<h3 id="navyywrap">4.2 &nbsp; yywrap()</h3>
+<p>LEX declares the function yywrap() of return-type int in the file <i>lex.yy.c</i> .
+LEX does not provide any definition for yywrap(). yylex() makes a call to yywrap()
+when it encounters the end of input. If yywrap() returns zero (indicating <i>false</i>) yylex() assumes
+there is more input and it continues scanning from the location pointed to by yyin.
+If yywrap() returns a non-zero value (indicating true),
+yylex() terminates the scanning process and returns 0 (i.e. “wraps up”).
+    If the programmer wishes to scan more than one input file using the generated lexical analyzer,
+it can be simply done by setting yyin to a new input file in yywrap() and return 0.
+</p>
+<p> As LEX does not define yywrap() in lex.yy.c file but
+makes a call to it under yylex(),
+the programmer must define it in the Auxiliary functions section
+or provide %option noyywrap in the declarations section.
+This options removes the call to yywrap() in the lex.yy.c file. Note that, it is <b>mandatory </b>to either define yywrap()
+or indicate the absence using the %option feature. If not, LEX will flag an error</p>
+<p><b>Example:</b></p>
+
+<!-- Gist hosted at https://gist.github.com/Subisha/7a9bb07e9f9478a6075e-->
+<script src="https://gist.github.com/Subisha/7a9bb07e9f9478a6075e.js"></script>
+
+<p> When yylex() finishes scanning the first input file, input_file.l yylex() invokes yywrap().
+The above definition of yywrap() sets the input file pointer to input_file_2.l and returns 0 .
+As a result, the scanner continues scanning in input_file_2.l .
+ When yylex() calls yywrap() on encountering EOF of input_file_2.l, yywrap() returns 1 and thus yylex() ceases scanning.</p>
+
+<p> <b>Exercise:</b> </p>
+<p>Suggest a modification in the above example LEX program to make the generated lexical analyzer read input
+<ul>
+<li> -> Initially from the console and then from a file input_file.l</li>
+<li> -> Initially from a file input_file.l and then from the console</li>
+<li> -> Twice from the console</li>
+</ul>
+</p>
+
+        </article>
+
+   <div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+        <article id="navcompleteexample" class="detail">
+        <h2>Even-Odd.l , a complete LEX program</h2>
+				<!--Github Gist hosted at https://gist.github.com/AshwathyTR/ab432fa710dfe5d1f22b.js -->
+					<script src="https://gist.github.com/AshwathyTR/ab432fa710dfe5d1f22b.js"></script>
+
+        </article>
+
+     <div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<article id="navdisambiguation" class="detail">
+        <h2>Disambiguation Rules</h2>
+        <p> yylex() uses two important disambiguation rules in selecting the right action to execute
+         in case there is more than one pattern that matches a string in the given input: </p>
+         <ol>
+     <li>1.  Choose the first match.</li>
+     <li>2. "Longest match" is preferred.
+     </li>
+         </ol>
+	</p>
+  <p><b>Example:</b></p>
+
+<pre>
+“break”			{ return BREAK; }
+[a-zA-Z][a-zA-Z0-9]*  	{ return IDENTIFIER; }
+</pre>
+<p>If "break" is found in the input, it is matched with the first pattern and yylex() returns BREAK. If "breakdown" is found, it is matched with the second pattern and yylex() returns IDENTIFIER. Note the use of disambiguation rules here. </p>
+      <p><b>Example:</b></p>
+
+<pre>/* Declarations section */
+%%
+
+“-”  {return MINUS;}
+“--” {return DECREMENT;}
+
+%%
+/* Auxiliary functions */
+</pre>
+
+<p> Assume that the function calling yylex() prints the name of the token.</p>
+          Sample Input/Output :
+            <pre>I: -
+O: MINUS
+&lt;
+I: --
+O: DECREMENT
+
+I: ---
+O: DECREMENT MINUS
+</pre>
+
+
+<p>Note that, in case of an -- input to the lexical analyzer, yylex() does not return two MINUS tokens,
+but instead returns a DECREMENT token, by the second disambiguation rule.</p>
+
+
+</article>
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+<article id="navpatternmatching" class="detail">
+        <h2>Pattern matching using LEX</h2>
+<p> Conceptually, LEX constructs a finite state machine to recognize all the regular expression patterns specified
+in the LEX program file. The code written by the programmer in the action part is executed when the machine is in accept state.
+The lex.yy.c program stores information about the finite state machine in the form of a decision table (transition table).
+  A transition(current_state,input_char) function is used to access the decision table.
+  LEX makes it's decision table visible if we compile the program with the -T flag.
+  The finite state machine used by LEX is deterministic finite state automaton. The lex.yy.c simulates the DFA. </p>
+</article>
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<article id="navsimulator" class="detail">
+        <h2>A token simulator program</h2>
+<!--Gist hosted at https://gist.github.com/nachivpn/9ce131d1307394c7f8c7 -->
+<script src="https://gist.github.com/nachivpn/9ce131d1307394c7f8c7.js"></script>
+
+<p>In this program, the main() function obtains the tokens returned by yylex() and checks if the input contains a valid identifier.
+</p>
+
+ Sample Input/Output :
+<pre>I: Var9
+O: Acceptable
+</pre>
+<p> When 'Var9' is provided as the input, the DFA constructed by LEX accepts the string,
+and the corresponding action 'return ID' executed.
+As a result <i>yylex()</i> returns the token ID, and the <i>main()</i>  function prints 'Acceptable' on the screen. </p>
+
+
+
+   </article>
+
+    <div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<article id="navdfaconstruction" class="detail">
+        <h2>Construction of a DFA from a regular expression</h2>
+        <p>
+            (This section explains how LEX converts a reqular expression to a finite automaton. An understanding of the contents of this section is not necessary to proceed to the next section.)
+        </p>
+<p> The construction of a DFA from a regular expression takes place in two steps.</p>
+<ul>
+          <li>Constructing a syntax tree from the regular expression
+           </li>
+           <li> Converting the syntax tree into a DFA </li>
+
+        </ul>
+
+       <b><big> 9.1 The intermediate syntax tree</big></b>
+       <p> Consider the first rule in the token simulator program in section 8.
+        It consists of the following regular expression :</p>
+          <p> <center>({low}|{upp})({low}|{upp})*({number})</center></p>
+           <p>For convenience in representation , let it be represented by :</p>
+           <p><center> ( a | A ) ( a | A )* (N)</center></p>
+           <p>where, 'a' represents {low}, 'A' represents {upp} and 'N' represents {number}.
+             The syntax tree constructed for the above regular expression would look like : </p>
+             <center><img src="img/lex_5.png" style="max-width:70%"></center>
+             <p> In the above figure  º represents the 'cat' (concatenation) operator,
+             <b>*</b> represents the 'star' operator (a unary operator) and <b>|</b> represents the
+              'or' operator. In the syntax tree the inner nodes are operators
+               while the leaves are the operands.
+               The subscript assigned to every leaf is called the <b>position</b> of the leaf. The positions have been assigned to the leaves starting from the left-most leaf proceedig towards the right. We are trying to represent the original regular expression with annotated positions. An annotated regular expression in this case:</p><p><center>( a1 | A2 ) ( a3 | A4 )* (N5)</center></p><p>The position of a leaf plays a vital role in the process of constructing states for the DFA because it represents the possible position a token maybe found in the input stream.
+             </p>
+             <p>NOTE: Each token may have multiple positions corresponding to it as it can be found in more than one leaves. For example 'a' can be possible found in the input at positions 1 and/or 3.</p>
+             <p> NOTE: This syntax tree is an intermediate data structure.
+     There will be no traces of this in lex.yy.c file, because it is only used in the construction of the DFA.</p>
+
+    <p> <big> <b>9.2 The intermediate syntax tree</big></b></p>
+      <p>Constructing the DFA involves two steps:</p>
+       <ul>
+      <li>1. Constructing the set of states of the DFA</li>
+        <li>2. Constructing all the possible transitions made by the DFA from one state to another on different inputs. </li>
+       </ul>
+<p> The language represented by the regular expression ( a | A ) ( a | A )* (N),
+can only possibly start with an 'a' or 'A'. From the syntax tree we may infer that these could only correspond to positions 1 or 2 . Let the set of these positions {1,2} be the start state of the DFA.
+For convenience it has been named as state I.</p>
+<p> Consider the position 1 (position of 'a'), it could be followed by either of the positions 3,4 or 5 (i.e, it can be followed by 'a','A' or 'N').
+Let this be a new state {3,4,5} represented by II.
+The position 2 ('A') could be possibly followed by either of the positions 3,4 or 5.
+But a new state is not required as {3,4,5} has already been represented by II.
+Similarly the positions 3 and 4 could be followed by the position 3 or 4 or 5.
+If followed by 5, the DFA must accept and terminate (syntax tree ends at position 5).
+Hence let the final (accept) state be III.
+Thus, the transitions maybe formulated as :</p>
+
+    <center><img src="img/lex_3.jpg" style="max-width:70%"></center>
+    <br>
+
+<b><big> 9.3 The intermediate syntax tree</big></b>
+<p> The DFA obtained for the above syntax tree would look like :</p>
+
+<center><img src="img/lex_4.png" style="max-width:70%"></center>
+<br>
+<p> This DFA represents the regular expression provided as a specification
+(i.e. pattern to be matched) in the first rule of the token
+simulator program in section 9. When the DFA is in the final state i.e. III,
+then the corresponding action is executed as instructed in the lex.yy.c file.
+The constructed DFA is simulated using a simulation algorithm. </p>
+<br>
+
+
+<b><big> 9.4 The DFA simulation algorithm</big></b>
+<p> The working of the constructed DFA is simulated using the following algorithm.</p>
+
+<pre>DFA_simulator()
+	current_state = start_state
+	c = get_next_char()
+	while(c != EOF)
+		current_sate = transition(current_state , c)
+  	c = get_next_char()
+		if(current_state ∈ Final_states)
+			/*ACCEPT*/
+		else
+			/*REJECT*/
+</pre>
+
+<p> The information about all the transitions made by the DFA
+can be obtained from the decision
+table (generally a two dimensional matrix) through the transition() function.
+              </p>
+
+</article>
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+
+<article id="navusingthelexicalanalyzer" class="detail">
+        <h2>Using the generated lexical analyzer</h2>
+<p> In this document, we have learned to use LEX to build a lexical analyzer. A lexical analyzer generated by LEX can be used for lexical analysis of ExpL. Lexical analysis is the inital stage of compiling a source language. We will learn more about how to use the lexical analyzer in later stages of the documentation. </p>
+</article>
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<article id="navexercise" class="detail">
+        <h2>Exercises</h2>
+<p>1.Write a lex file
+<ul>
+	<li>1.1 to count the number of lines, words, and characters in the input.</li>
+	<li>1.2 to count the number of integers and floating point numbers appearing in the input. <li>
+	<li>1.3 to list out all words of length three, starting with "A"  to uppercase.</li>
+	<li>1,4 to list out all C-like comments (both single line and multi line comments) from a text file.</li>
+</ul>
+        </p>
+</article>
+
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<article id="navreferences" class="detail">
+        <h2>References</h2>
+<p> For further details on the topics covered in this document, the reader may refer to the following :</p>
+<ul>
+<li>1. Compilers : Principles,Techniques and Tools by Alfred V.Aho, Monica S. Lam, Ravi Sethi and Jeffrey D.Ulman .</li>
+      <li>2. Modern Compiler Implementation in C by Andrew W.Appel</li>
+<li>3. Flex &amp; Bison by John Levine</li>
+<li>4. <a href="http://dinosaur.compilertools.net/"> http://dinosaur.compilertools.net/</a></li>
+</ul>
+</article>
+<div class="up grid col-one-third" style="float:right">
+			<a href="#navtop" title="Go back up"> top ↑</a>
+	</div>
+					</div>
+</section>
+
+<footer class="center part clearfix">
+<ul class="social column3 mright">
+    <li><a href="https://github.com/silcnitc">Github</a></li>
+</ul>
+  <!-- <div class="up column3 mright"> <a href="#navtop" class="ir">Go up</a> </div> -->
+  <div class="up column3" style="color: black;"> <p style="font-weight: bold;"> Contributed By : <a href="http://www.linkedin.com/in/nachivpn">Nachiappan V</a></p> </div>
+  <nav class="column3">
+    <ul>
+      <li><a href="index-2.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <!-- <li><a href="uc.html">Contact</a></li> -->
+    </ul>
+  </nav>
+</footer>
+
+</body>
+<!-- Javascript - jQuery
+<script src="http://code.jquery.com/jquery.min.js"></script>-->
+<script>window.jQuery || document.write('<script src="js/jquery-1.7.2.min.js"><\/script>')</script>
+<!--[if (gte IE 6)&(lte IE 8)]>
+<script src="js/selectivizr.js"></script>
+<![endif]-->
+<script src="js/scripts.js"></script>
+
+<!-- Mirrored from silcnitc.github.io/lex.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:51:33 GMT -->
+</html>

@@ -1,0 +1,150 @@
+<!Doctype html>
+<html lang="en">
+
+<!-- Mirrored from silcnitc.github.io/install.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:51:27 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+<title>Installation</title>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+ <header class="center clearfix" id="navtop"> <a href="index-2.html" class="logo fleft"><img src="img/logo.png" alt=""></a>
+  <nav class="fright">
+    <ul>
+      <li><a href="index-2.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+			<li><a href="help.html">Help</a></li>
+			<li><a href="roadmap.html">Roadmap</a></li>
+			<li><a href="documentation.html" class="navactive">Documentation</a></li>
+    </ul>
+  </nav>
+</header>
+<div class="about center part clearfix">
+<header class="title">
+<h3 class="fleft">Contents</h3>
+</header>
+    <aside class="column4 mright">
+<menu>
+<ul>
+<li><a href="#navlex" class="sec">Install LEX</a></li>
+<li><a href="#navyacc" class="sec">Install YACC</a></li>
+<li><a href="#navxsm" class="sec">Install XSM Simulator</a></li>
+<li><!--For blank space between lines and download button--> &nbsp;</li>
+
+<li><!--Blank line for space between download button and main title--> &nbsp;</li>
+</ul>
+</menu>
+
+</aside>
+
+<section class="columnthird content">
+<h2>INSTALLATION</h2>
+<article id="navlex" class="detail">
+<h2>Install LEX</h2>
+<br>
+<p>
+For Ubuntu Users :
+<pre>
+sudo apt-get update
+sudo apt-get install flex
+</pre>
+
+</p>
+<p>
+For Fedora Users :
+<pre>
+yum install flex
+</pre>
+
+
+</p>
+
+</article>
+
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<article id="navyacc" class="detail">
+<h2>Install YACC</h2>
+<p> For Ubuntu Users :</p>
+<pre>
+sudo apt-get update
+sudo apt-get install bison
+</pre>
+             <br>
+<p> For Fedora Users :</p>
+<pre>
+yum install bison
+</pre>
+
+</article>
+
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+  <article id="navxsm" class="detail">
+  <h2>Install XSM Machine Simulator</h2>
+    <p>
+      The compiler's target code needs to be run on a simulator and the installation steps are given below.
+    </p>
+  <p>
+    <h4>Let us install XSM</h4>
+    <h5> Step 1 : </h5>
+     <!-- <p> Download XSM Simulator : <a href="files/xsm_expl.tar.gz" class="button"> Version 1 </a> </p> -->
+      <p> Download XSM Simulator : <a href="files/xsm_expl.tar.gzip" class="button"> Version 1 </a> </p>
+ </p>
+    <h5> Step 2 :</h5>
+    <p> Extract this file and navigate into the folder <b>xsm_expl</b> through the terminal.</p>
+    <p>
+        Do the following steps:<br>
+        <ul>
+          <li id="otis">1. Type "make".
+          <p>
+            You may get some warnings and they can be ignored. If you get any <b>fatal error</b>,
+            then install the following dependencies and try running "make" again : <br>
+            <b>sudo apt-get install libreadline-dev</b> <br>
+            <b>sudo apt-get install lib6-dev</b> <br>
+            If any other dependencies are missing (this depends on your system configuration), you have to install the missing dependencies
+            and run "make" again.
+          </p></li>
+          <li id="otis">2. Type "cd ../xfs-interface/" and type "./init".</li>
+        </ul>
+    </p>
+    <p>The usage instructions for the XSM simulator can be found <a href="xsmusagespec.html" target="_blank"> here</a>.</p>
+
+    <p> Please report installation errors to <i>kmurali@nitc.ac.in</i> </p>
+
+</article>
+
+<div class="up grid col-one-third" style="float:right">
+<a href="#navtop" title="Go back up"> top ↑</a>
+</div>
+
+<footer class="center part clearfix">
+<ul class="social column3 mright">
+    <li><a href="https://github.com/silcnitc">Github</a></li>
+</ul>
+  <div class="up column3 mright"> <a href="#navtop" class="ir">Go up</a> </div>
+  <nav class="column3">
+    <ul>
+      <li><a href="index-2.html">Home</a></li>
+      <li><a href="about.html">About</a></li>
+      <!-- <li><a href="uc.html">Contact</a></li> -->
+    </ul>
+  </nav>
+</footer>
+
+</body>
+<!-- Javascript - jQuery
+<script src="http://code.jquery.com/jquery.min.js"></script>-->
+<script>window.jQuery || document.write('<script src="js/jquery-1.7.2.min.js"><\/script>')</script>
+<!--[if (gte IE 6)&(lte IE 8)]>
+<script src="js/selectivizr.js"></script>
+<![endif]-->
+<script src="js/scripts.js"></script>
+
+<!-- Mirrored from silcnitc.github.io/install.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:51:27 GMT -->
+</html>

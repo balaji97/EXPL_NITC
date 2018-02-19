@@ -1,0 +1,697 @@
+<!Doctype html>
+<html lang="en">
+    
+<!-- Mirrored from silcnitc.github.io/xsm-environment-tut.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:52:11 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+        <title>XSM Execution Environment</title>
+        <meta charset="UTF-8">
+        <!--<link rel="stylesheet" href="css/bootstrap.min.css">-->
+        <link rel="stylesheet" href="css/style_new.css">
+        <script src="js/jquery-1.12.1.min.js" charset="utf-8"></script>
+        <link rel="stylesheet" href="js/embed-2cd369fa1c0830bd3aa06c21d4f14a13e060d2d31bbaae740f4af4.css"><div id="gist28627206" class="gist"></div>
+        <link rel="stylesheet" href="js/embed-cbe5b40fa72b0964f90d4919c2da8f8f94d7c9f6c2aa49c07f6fa3.css"><div id="gist28627206" class="gist"></div>
+    </head>
+    <div class="container">
+        <header id="navtop">
+            <a href="index-2.html" class="logo fleft"><img src="img/logo.png" alt=""></a>
+            <nav class="fright">
+                <ul>
+                    <li><a href="index-2.html">Home</a></li>
+                    <li><a href="about.html">About</a></li>
+                    <li><a href="help.html">Help</a></li>
+                    <li><a href="roadmap.html">Roadmap</a></li>
+                    <li><a href="documentation.html" class="navactive">Documentation</a></li>
+                </ul>
+            </nav>
+        </header>
+        <div class="Services-page main grid-wrap">
+            <header class="grid col-full">
+                <hr/>
+                <p class="fleft">XSM Execution Environment Tutorial</p>
+                <br>
+                <br>
+                <!-- <a class="button" href="">Download as PDF</a> -->
+            </header>
+            <aside class="grid col-one-quarter mq2-col-full">
+                <menu>
+                    <ul>
+                        <li class="sec"><a href="#nav-pre-requisites">Pre-Requisites</a> </li>
+                        <li class="sec"><a href="#nav-experiment1">Experiment I</a></li>
+                        <li class="sec"><a href="#nav-experiment2">Experiment II</a></li>
+                        <li class="sec"><a href="#nav-experiment3">Experiment III</a></li>
+                    </ul>
+                </menu>
+            </aside>
+            <body>
+            <section class="grid col-three-quarters mq2-col-full">
+                <div class="grid-wrap" id="nav-pre-requisites">
+                    <article class="grid col-full">
+	                    <p>
+							<b>Pre-requisite reading:</b>
+							<ul>
+								<!-- <li id="otis">1.  A rigorous reading of <a href="abi.html#nav-virtual-address-space-model" target="_blank">XSM virtual machine model</a>.</li> -->
+								<li id="otis">1.  A quick reading of  the ExpOS <a href="abi.html" target="_blank">ABI documentation</a> for XSM machine. You may not understand the whole content now.  The details will be explained as you read ahead.</li>
+							</ul>
+						</p>
+						<p>
+							<b>Learning Objectives </b>:
+							<ul>
+								<li id="otis">At the end of this tutorial you will be able to <b>generate XEXE executable files</b> containing XSM assembly language programs which can be run on the XSM simulator given to you. Along the way, you will learn how to use the <b>system call interface</b> and the <b>library interface</b> of the underlying Operating system to handle console input and output.</li>
+							</ul>
+						</p>
+						<hr>
+					</article>
+                    <article class="grid col-full">
+                        <p>
+                        	This tutorial helps you to gain a basic understanding of the execution environment provided by the XSM simulator. The compiler you design for the ExpL language is supposed to generate target XSM machine code that runs on the XSM Simulator provided to you. However, the bare machine cannot directly run the target code. The operating system (OS)  that runs on top of the machine is the actual software that sets up an execution enviornment necessary for running the target code. Hence, the compiler's obligation is to generate target code that is understandable to the operating system.
+                        </p>
+                        <p>
+                        	Consequently, there must be a document provided by the OS implementation to the compiler designer that explains the interface to the operating system that the compiler must adhere to. This document is called the <b>Application Binary Interface</b> or <b>ABI</b>.
+                        </p>
+                        <p>
+                         	The XSM simulator given to you is actually much more than a bare XSM hardware simulator. It has the capacity to understand the ABI for the ExpOS operating System for the XSM machine. This ABI expects that the compiler generates the target file in a format called the <a href="abi.html#nav-XEXE-executable-file-format" target="_blank">XEXE executable format</a>.
+                        </p>
+      					<p>
+      						Your compiler simply needs to generate an executable file following the XEXE executable format and store it on the local machine. When you use the XSM simulator to run the program, the following actions take place.<br>
+      						<ul>
+      							<li id="otis">1. The script that runs the simulator transfers the file from your local machine's disk to the XSM machine's (simulated) hard disk.</li>
+      							<li id="otis">2. It then boots up the operating system (the OS is already preloaded in the simulator's hard disk). The bootstrap loader starts in the kernel mode and sets up a user process in memory, allocating an address space.  Then, it transfers the executable file from the hard disk to the <a href="abi.html#nav-virtual-address-space-model" target="_blank"> code region</a> of this memory. Page tables are also set up to run the process in user mode.</li>
+      							<li id="otis">3. Finally, the simulator sets the instruction pointer (IP) to the address specified in the <b>entry-point field</b> of the header of the executable file and control transfers to this instruction, resulting in execution of the loaded program starting with the instruction specified by the entry point. The machine also switches from the kernel mode to the user mode. (Technically, the OS code pushes the entry point address on to the program's stack and executes the <a href="http://exposnitc.github.io/arch_spec-files/instruction_set.html" target="_blank">IRET instruction</a> resulting in transfer of control in user mode to the specified memory address. These details are not relevant for your work and are noted just for the sake of information.)</li>
+      						</ul>
+      					</p>
+      					<p>
+      						We start now by generating a small XEXE executable file containing an XSM program to find the sum of two numbers and store the value in a register. The value of the register will have to be inspected in order to view the ouput. This is possible by executing the XSM simulator in <a href="xsmusagespec.html#nav-debug" target="_blank">debug mode</a>. Later we will see how console input and output are handled.
+      					</p>
+      					<hr>
+  				</article>
+                <article class="grid col-full">
+	                <p id="nav-experiment1">
+	                	<b>Experiment I</b> :  <b>Adding two numbers using registers</b>.<br>
+	                </p>
+	                <p>
+	                	As noted above, executable programs must be designed in such a way that it must be possible for the file to be loaded and executed by the underlying operating system. When a program is loaded into memory by the OS, the OS typically assigns a virtual address space (or simply an address space). In the present case, the address space of a program starts at address 0 of the memory and ends at address 5119. This means that while designing the target program, you may assume that this is the total computer memory accessible to the program.
+	                </p>
+	                <p>
+	                	The compiler typically divides this memory into various regions – namely the code region, (often called the text region), data region, stack region, heap region etc. The ABI specifies the starting address and ending address of each region in the address space. This is specified <a href="abi.html#nav-virtual-address-space-model" target="_blank">HERE</a>. The ABI specifies that  the compiler must divide the memory into four regions – <b>library, code, stack and heap</b>. (there is <b>no separate data region</b> – instead the stack region must be used for this as well).
+	                </p>
+   					<p>
+   						For our immediete requirements, the important region is the code region. The code region contains two parts – a <b>header</b> (addresses 2048 to 2055) and <b>code</b> (address 2056-4095). The target code will be loaded into this region of the memory when the OS (simulator) loads the program for execution. Details will be described soon.
+   					</p>
+   					<p>
+   						The XEXE executable format stipulates that the <b>first 8 words of an executable file must be a header</b>. The rest of the file must contain assembly language program to be executed. The loader actually will simply copy the contents of the executable file into the region of memory between addresses 2048 and 4095. Consequently, the header will be loaded between 2048-2055 and the rest of the file (containing the XSM instructions) into addresses 2056 to 4095. The contents of the file will be copied to the memory in the order in which they appear in the file.
+   					</p>
+   					<p>
+   						Since each XSM assembly instruction requires two words of memory storage, the first instruction will be loaded into address 2056 and 2057, the second in 2058 and 2059 and so forth.  Since the code region of the memory ends at 4095, the maximum number of instructions possible in a program is limited to 1020. This is the limit set by the particular OS platform used in this experiment.
+   					</p>
+   					<p>
+   						One important field of the header is its second entry – the entry point. The loader initializes the <b>Instruction Pointer (IP)</b> register of the XSM machine to this value. Thus, if entry point is 2064, the simulator the XSM machine simulator will start program execution by fetching the instruction stored at this address. The ABI stipulates that the value of the first field called the <b>magic number</b> must be set to zero. The setting of other fields in the header are not relevant for this experiment.
+   					</p>
+    				<p>
+    					<b>Note</b>:  When the program is actually loaded for execution by the OS, the physical addresses in the actual memory to which the executable program is loaded will be different from the virtual addresses set by the compiler. Such relocation requires architecture support. In the XSM machine, the support is through paging. However address translation is a concern of the OS, not of the compiler. Hence we will not pursue this matter here. However, for those interested, details on XSM paging scheme is given <a href="http://exposnitc.github.io/arch_spec-files/paging_hardware.html" target="_blank">HERE</a>.
+    				</p>
+  					<p>
+  						With this, we complete the background needed to complete the present experiment.  We now proceed to the implementation.
+  					</p>
+  					<p>
+  						<b>Implementation</b> :<br><br>
+						An XSM assembly language program to find the sum of two numbers could work as the following:<br>
+						<div class="syntax">
+							1.  Store the first number in a register – say R0.<br>
+							2.  Store the second number  in a register – say R1.<br>
+							3.  ADD R0, R1.<br>
+						</div>
+  					</p>
+  					<p>
+  						The result will be stored in R0.<br>
+  						To generate code for the above tasks and write it into a target_file, you must write code as:<br>
+  						<div class="syntax">
+							fprintf(target_file, "BRKP");<br>
+                            fprintf(target_file, "MOV R0, 3\n");<br>
+                            fprintf(target_file, "MOV R1, 2\n");<br>
+                            fprintf(target_file, "ADD R0, R1\n");
+              			</div>
+  					</p>
+  					<p>
+  						The target_file will look as shown below.
+	  					<script src="js/edda61e70ba922a59f37b9680c420b53.js"></script>
+  					</p>
+					<p>
+						However, the header must be written into the first eight words of the target file before writing out the instructions. You must reserve the first eight words of the executable file for the header before writing code into the file. Now, set the entry point field to the first instruction to be executed. If the code is written immedietely after the header, the first instruction will be loaded to memory address 2056 and 2057 (see <a href="abi.html#nav-virtual-address-space-model" target="_blank">memory model</a>). Hence, you must set the header as:<br>
+						<div class="syntax"> fprintf(target_file, " %d\n %d\n %d\n %d\n %d\n %d\n %d\n %d\n ",0,2056,0,0,0,0,0,0); </div>
+					</p>
+					<p>
+						<script src="js/a244076527f1f9daae58794006b3461a.js"></script>
+					</p>
+					<p>
+						The above code essentially sets the first field – magic number - to  0, the second field - entry point - to 2056 and other fields to 0.
+					</p>
+					<p>
+						Now, to run the executable file, you must use the XSM simulator. The simulator usage commands are specified <a href="xsmusagespec.html" target="_blank">here</a>. You must read the above link before proceeding further.
+					</p>
+					<p>
+						The simulator expects a library file by the name library.lib together with the XEXE executable file to be supplied as a command line argument. You will learn more about the library in later in this documentation. For now create a file library.lib with just one instruction in the XSM simulator folder.
+						<script src="js/2b86865baf9befd7ff0e87fb5fa7ba8b.js"></script>
+					</p>
+					<p>
+						Now we will try to execute the target_file in the <a href="xsmusagespec.html#nav-debug" target="_blank">debug mode</a>.
+						<ul>
+							<li id="otis">1. Open terminal and navigate to the simulator folder.</li>
+							<li id="otis">2. Type "./xsm -l library.lib -e < path to target_file.xsm > --debug".</li>
+						</ul>
+						<b>Note</b>: Path to the xsm file need to be relative path.
+					</p>
+					<p>
+						Since we are trying to execute the target_file in debug mode, the simulator executes all the instructions present before the BRKP instruction. We will look at the status of register R0 before the execution of instruction "MOV R0, 3".
+                        <img src="img/reg0before.png">
+						<ul>
+							<li id="otis">Type "s" and then type "reg R0".</li>
+						</ul>
+                        <img src="img/reg0after.png">
+                        <ul>
+                            <li id="otis">We can see that value 3 is stored in this register. Now try typing "s" and then "reg R1".</li>
+                        </ul>
+						<img src="img/reg1.png">
+                        <ul>
+                            <li id="otis">Type "s" and then type "reg R0".</li>
+                        </ul>
+                        <img src="img/regR05.png">
+						<ul>
+                            <li id="otis">We can see that value stored in the register is 5.</li>
+                            <li id="otis">Now type <b>reg R0 R1</b></li>
+                        </ul>
+						<img src="img/regR0R1.png">
+						<ul>
+                            <li id="otis">The command "reg Rn Rm" dislays the contents of all registers from n to m.</li>
+                            <li id="otis">Now type <b>reg</b>.</li>
+                        </ul>
+						<img src="img/reg.png">
+						<br>This command displays the contents of all the machine registers namely IP, SP, BP, PTBR, PTLR, EIP, EC, EPN, EMA, R0-R19 in that order. We will not be concerned with PTBR, PTLR, EIP, EC, EPN and EMA registers which are accessible only to the OS kernel executing in previliged mode.  Note that the value of IP register is 2064.  IP was initialized to 2056 while loading (entry point value) and after executing four instructions, IP got incremented to 2064.  The OS kernel had set SP to point 4095 at load time (why?).
+					</p>
+					<p>
+						<b>Note</b>: You would have observed that if you try to continue to execute beyond the last instruction, the simulator flags abnormal program termination. This is because after executing the last instruction of the program, the simulator increments the instruction pointer and tries to execute the next instruction. However, since there is no valid instruction stored in the memory, the simulator will enconter an invalid instruction and generate an exception. This results in transfer of program control to the OS kernel code that will terminate execution and report error. We will see how graceful program termination is achieved in the next experiment.
+					</p>
+					<p>
+						<b>Exercise 1 </b>:  Write an XSM assembly langauge program to find the largest of three numbers and run it on the simulator. You will learn how to handle the JMP instruction while doing this exercise.
+					</p>
+  					<p>
+  						<b>Exercise 2 </b>:  Modify your code generation module to store the result of the previous program in the first location in <a href="abi.html#nav-virtual-address-space-model" target="_blank">stack region</a> namely address 4096 and watch the contents in debug mode after execution.
+  					</p>
+  					<hr>
+  				</article>
+  				<article class="grid col-full">
+	                <p id="nav-experiment2"> <b>Experiment II</b> : Input/Output using OS system call interface</p>
+	                <p>
+						<b>Reading Assignment</b>: Read the low level system call interface of the <a href="abi.html#nav-lowlevel-syscall-interface" target="_blank">ABI</a>
+	                </p>
+	                <p>
+						In this experiment, you will extend the previous stage to print the result of adding two numbers to the console using the low level system call interface provided by the ABI.
+	                </p>
+	                <p>
+						The conceptual point to understand here is that console I/O is handled by the kernel routines of the operating system. Kernel modules execute in <b>privileged mode</b> of execution and can execute special privileged instructions that access devices and other resources in a machine.
+	                </p>
+	                <p>
+						However, your XEXE executable program execute in unprivileged mode. Such programs are called <b>application programs</b> or simply applications. These programs cannot contain privileged instructions. (If you try to write privileged instruction in your program and execute, the machine will raise an <b>exception</b> when it fetches the instruction and the exception handler module of the OS kernel will terminate the application, flagging an error.) The <a href="abi.html#nav-XSM-instruction-set"  target="_blank">instructions</a> specified in the ABI given to you are all unprivileged instructions. (To know more about privileged instructions in XSM, see <a href="http://exposnitc.github.io/arch_spec-files/instruction_set.html#privileged_instruction" target="_blank"> ExPOS documentation</a>).
+					</p>
+					<p>
+						An OS typically provides you with a set of kernel level routines called system calls which your code can invoke for performing console I/O. A system call is invoked by a trap instruction (The INT instruction is the trap instruction of the XSM machine). Arguments like the system call number specifying the particular OS service (like read/write/program exit) and so on are required. (see details <a href="abi.html#syscalltable" target="_blank">here</a>). The OS specifies how an application must pass arguments and extract return values from system calls called the calling conventions. <b>Generally, arguments to a system call are passed through the application program's stack</b>. These details are written down in the  <a href="abi.html#nav-lowlevel-syscall-interface" target="_blank">low level system call interface</a> of the ABI.
+  					</p>
+  					<p>
+						<b>Note</b>:  An OS typically will provide a large number of system calls for various requirements. For our purposes, the relevant system calls are those for console read, console write and program exit.
+					</p>
+					<p>
+						As noted previously, the arguments/return values to/from a system call are passed through the application program's stack. Each application maintains a stack region in memory where run-time data can be stored while the program executes. The ABI specification stipulates that the stack region of a program shall be between memory addresses 4096 and 5119. The application generally reserves some initial addresses starting from 4096 for storing global variables in the program (called <b>static allocation</b>) and then initializes the stack to the first free memory after those allocated to variables. Arguments to a system call are pushed into the stack before executing the INT instruction. Before the system call transfer control back (using the <a href="http://exposnitc.github.io/arch_spec-files/instruction_set.html" target="_blank">IRET instruction</a>), return values would have been pushed into the stack.
+					</p>
+					<p>
+						<b>Implementation</b> :<br><br>
+
+						<!--In Exercise 2 above, you were asked to store the sum of two numbers into memory
+             address 4096. Now, we will see how this number can be printed out into the console.
+
+
+              In experiment I , you were asked to sum of the two numbers . Now you an see how we an print the sum into console.
+              -->
+
+              In Experiment I above, you were asked to calculate the sum of two numbers which are stored
+              in registers. Now, we will see how this number can be printed out into the console.
+
+					</p>
+					<p>
+						To print the data into the console, we need to:
+						<ul>
+							<li id="otis">1. Push the data(using registers) into the stack along with other arguments to the system call.</li>
+							<li id="otis">2. Invoke the write system call using the INT instruction specifying the appropriate interrupt number.</li>
+						</ul>
+					</p>
+			<!--		<p>
+						The following example shows sample code that must be added to your earlier program to output the contents of the location 4096.
+					</p>
+
+					<p>
+ 						Store the value of the R0 in the memory location 4096.
+ 						<div class="syntax">MOV [4096], R0</div>
+ 					</p>
+
+        -->
+
+
+ 					<p>
+						<!--The XSM machine increments SP immedietely before a PUSH operation
+            by XSM machine and hence the first PUSH operation will be storing
+            data to address 4096 ().-->
+
+            To use the stack we need to set the stack pointer(SP). Always SP should
+            point the top value of the stack. The XSM machine increments SP immedietely before a PUSH operation
+            by XSM machine and hence the first PUSH operation will be storing
+            data to address 4096. So, we need to initialize SP to 4095.
+
+ 						<div class="syntax">MOV SP, 4095</div>
+ 					</p>
+ 					<p>
+						Now, the arguments to a write operation must be pushed on to the stack:
+            <br>
+            Note that the contents which are to be written to the console are present in the register R0.
+            So, we are not using the register R0.
+ 						<b>System Call Number</b> : 5 for Write
+ 						<div class="syntax">
+	 						MOV R2, 5<br>
+	 						PUSH R2
+ 						</div>
+ 					</p>
+ 					<p>
+ 						<b>Argument 1</b> :  value -2
+ 						<div class="syntax">
+	 						MOV R2, -2<br>
+	 						PUSH R2
+	 					</div>
+	 				</p>
+ 					<p>
+ 						<b>Argument 2</b> : Data to be written (For this example, data is present in R0. So, we are pushing R0)
+ 						<div class="syntax">
+	 						PUSH R0
+ 						</div>
+ 					</p>
+ 					<p>
+ 						<b>Note</b> : Whenever there is a blank argument or a space to be pushed on to the stack, we follow the convention of pushing R0 on to the stack and the status of stack in the figure will be shown using blank argument only.<br><br>
+
+ 						<b>Argument 3</b> : Blank /* Push any register */
+ 						<div class="syntax">
+ 							PUSH R0
+ 						</div>
+ 					</p>
+ 					 <p>
+ 						<b>Storage for Return Value</b> :  Push any register
+ 						<div class="syntax">
+ 							PUSH R0
+ 						</div>
+ 					</p>
+ 					<p>
+						Now, invoke the trap instruction to invoke the kernel module for console output. The ABI specifies that the interrupt number must be 7.<br><br>
+ 						<b>Interrupt Number</b> :  7 for Write System Call
+ 						<div class="syntax">
+ 							INT 7
+						</div>
+					</p>
+					<p>
+						The status of the stack after the INT instruction will look as shown below<br>
+						<img src="img/syscallstack1.png">
+            <br>
+            Note that in the above diagram argument 2 is 5 because the contents of the register R0 is 5.
+          </p>
+					<p>
+						The above sequence of instructions will invoke the write system call. Upon successful write operation, the value 0 will be returned to the calling program through the stack. We assume here that the call will be successful.
+					</p>
+					<p>
+						Now upon exit from the system call :
+						<ul>
+							<li id="otis">1. The return value may be retrievied if required.</li>
+							<li id="otis">2. The stack must be set back to the state before the call as stipulated in the ABI.  This is necessary to avoid loss of stack space after each call.</li>
+						</ul>
+					</p>
+					<p>
+						The following instructions will do the above.
+						<div class="syntax">
+						//  The following code must be executed after return from the system call<br>
+						POP R0 // Pop and save the return value in some register<br>
+						POP R1 // Pop and discard the argument3<br>
+						POP R1 // Pop and discard the argument2<br>
+						POP R1 // Pop and discard the argument1<br>
+						POP R1 // Pop out system call number.<br>
+						</div>
+					</p>
+					<p>
+						The target_file will look as shown below after adding the Write system call.
+					<!--	<script src="js/49fce38a3c5dfa5419e73ec172a770be.js"></script> -->
+
+            		<script src="js/81cceb55ce0594ed1812de2d337051af.js"></script>
+					</p>
+					<p>
+						Now, having generated the executable program run the program using the simulator. To run the program, follow the instructions given below.
+
+						<ul>
+							<li id="otis">1. open terminal and navigate to the XSM simulator folder.</li>
+							<li id="otis">2. Type "./xsm -e < relative path to target_file.xsm> "</li>
+						</ul>
+					</p>
+					<p>
+						You can see that the value 5 is printed on the console.
+					</p>
+					<p>
+						Observe that the simulator flagged an error after the last statement was executed. This happened because after executing the last valid instruction in the program, the simulator had no idea that the program had ended and hence tried to fetch the next instruction from memory. However, since there is no valid insturction in that memory location, the machine raises an exception [see <a href="http://exposnitc.github.io/arch_spec-files/interrupts_exception_handling.html" target="_blank">here</a> for exceptions of XSM] and control was transfered to an exception handler routine of the OS kernel. Typically, in a multitasking environment, the OS will terminate the program, reclaim resources allocated to it and schedule some other process.
+					</p>
+					<p>
+						The exception handler routine of the XSM simulator given to you is designed to print an error message and terminate the simulation.
+					</p>
+					<p>
+						The "proper" way to exit the application is to invoke the exit system call. This will inform the OS that the program has finished execution. The exit system call code of a typical OS kernel will "gracefully" exit the application and schedule other programs for execution. The OS will never return to the application that invokes the exit system call.
+					</p>
+					<p>
+						The exit system call routine of the XSM simulator given to you will print a message indicating successful program execution and terminate the simulation.
+					</p>
+                    <p>
+                        <b>Important Note</b> : The system call code for read, write and exit will modify some of the registers R0, R1 etc.
+                        Hence, if you had stored some value into these registers before the call, those values will be lost during the call.
+                        Hence, if you wish to restore the values of the registers, the following procedure must be adopted.
+                        <ul>
+                            <li id="otis">1.  Push all registers in current use into the stack.  For example, if you wish to retain values of
+                               R0, R1 and R2 after the call, push these three registers into the stack.</li>
+                            <li id="otis">2.  Now, follow procedure outlined earlier to make the system call.</li>
+                            <li id="otis">3.  After return POP out the registers saved in the stack.  (Note that you must pop the registers out in reverse order of push).</li>
+                        </ul>
+                    </p>
+					<p>
+						<b>Exercise 3</b> : Follow the instructions in the low level system call interface of the ABI to invoke the <a href="abi.html#nav-lowlevel-syscall-interface" target="_blank">exit system call</a> after the console output in your previous program.
+					</p>
+
+<p>
+So far, there was no need to allocate memory for storing variables as all the data involved were stored in registers.  The next
+exercise requires allocation of storage for variables.  Suppose you want <b>to read a number from the console</b>, then <b>the address of
+a memory location must be passed as the second argument to the read system call (INT 6).</b>  The system call will place the input data into
+the memory address received as the second argument.
+</p>
+<p>
+Suppose you need three variables to be read, then you may reserve the first three words of the stack (memory addresses
+4096, 4097 and 4098) for those variables. <b>As some portion of the stack is now reserved for variables,
+the initial value of the stack pointer
+may be set such that the run time stack begins above the reserved region.</b> (SP may be set to 4098 here).
+This ensures that the reserved region is not over-written when the program
+pushes data into the stack.  To read a variable from input, you need to push the address of the
+memory location reserved for the variable as
+the second argument  (4096 for the first, 4097 for the second, 4098 for the third.)
+and invoke the read system call.  With this strategy, the following exercise can be easily solved.
+</p>
+          <p>
+						<b>Exercise 4</b> : Write an XSM assembly language program to read three numbers from the console and print the largest. (Invoke the read system call for console input.) Caution : Ensure that you understand the <b>important note</b> written above before starting with the implementation.
+					</p>
+
+
+
+
+					<p>
+						<b>Exercise 5</b> : Write an XSM assembly language program to read numbers until a zero is entered and print their sum.
+					</p>
+					<p>
+						<b>Important Note</b> :  Exercises 4 and 5 essentially ask you to handle conditional and iterative constructs in assembly language. These exercises give insight into how machine code must be genrated for <b>if-then-else </b> and <b>while-do</b> constructs of programming languages.
+					</p>
+					<hr>
+				</article>
+				<article class="grid col-full">
+	                <p id="nav-experiment3">
+						<b>Experiment III</b> : <b>Understanding the Library Interface</b>
+					</p>
+					<p>
+						<b>Prerequisite Reading</b> : Read and understand the <a href="abi.html#nav-eXpOS-system-library-interface" target="_blank">library interface</a>.
+					</p>
+					<p>
+						In this experiment, you will learn how to implement the library interface stipulated in the ABI for supporting <b>read, write and exit system calls</b>.
+					</p>
+					<p>
+						The  <a href="abi.html#nav-virtual-address-space-model" target="_blank">memory address space model</a> of a program reserves the first 1024 words of the address space of a program to load a library. Here we explain the purpose of the library.
+					</p>
+					<p>
+						If we consider C programs, almost every program uses the routines in the library <i>stdio.h</i>. Since in a computer system, several application programs will be running concurrently, it is a good idea to have the code for <i>stdio.h</i> loaded once at bootstrap time into some region of the physical memory and link this memory to the address space of each program's standard library region at load time. This code will be designed once and shared between all applications.
+					</p>
+					<p>
+						The ABI specifies that the ExpOS library for the XSM machine must be linked to address 0 to 1023. The XSM simulator given to you will load the contents of the file <i>library.lib</i> to the addresses 0 - 1023 of your program. The ABI stipulates that the library must support functions for read, write and exit. (The library also must contain functions Alloc, Free and Initialize which will not be discussed here.)
+					</p>
+					<p>
+						To access any library function, an application must transfer control to the code at memory address 0 using the instruction <b>CALL</b>. This is the first memory address in the library region. The arguments to the call specify which library function is being invoked. The library interface is specified <a href="abi.html#nav-eXpOS-system-library-interface" target="_blank">here</a>.
+					</p>
+					<p>
+						An application program can execute read, write and exit functions through the library. This means that once the library is implemented, application programs can call the library (CALL 0) to perform read, write and exit operations by passing appropriate function code and arguments. Internally, the library contains code that traps to the Os kernel.
+					</p>
+					<p>
+						One might naturally raise the question – why should we route the system calls through the library than call them directly as was done so far. There are several advantages in using the library. At a later time, if the interrupt number for an OS service – say write – gets modified, only the library needs to be replaced. The compiler need not be modified, nor application programs need re-compilation. Thus, the library provides an abstraction that hides low level details from the compiler and the application.
+					</p>
+					<p>
+						<b>Implementation</b> :<br><br>
+							In this experiment, we implement the program of Experiment II using the library.
+					</p>
+                <!--    <p>
+                        Recall that to print the contents of memory location 4096 into the console, we need to:
+                        <ul>
+                            <li id="otis">1. Push the address 4096 into the stack along with other arguments to the system call.</li>
+                            <li id="otis">2. Invoke the write system call using the INT instruction specifying the appropriate interrupt number.</li>
+                        </ul>
+                        The step 1 will remain same as in the above experiment. We will implement step 2 using library interface.
+                    </p>
+                  -->
+                    <p>
+          						Recall that to print the data into the console, we need to:
+          						<ul>
+          							<li id="otis">1. Push the data(using registers) into the stack along with other arguments to the system call.</li>
+          							<li id="otis">2. Invoke the write system call using the INT instruction specifying the appropriate interrupt number.</li>
+
+          						</ul>
+                          The step 1 will remain same as in the above experiment. We will implement step 2 using library interface.
+          					</p>
+
+                    <!--
+                    <p>
+                        The following example shows sample code that must be added to the program written in Experiment I to output the contents of the location 4096 using the library.
+                    </p>
+                    <p>
+                        Store the value of the R0 in the memory location 4096.
+                        <div class="syntax">MOV [4096], R0</div>
+                    </p>
+                  -->
+
+                    <!--
+                    <p>
+                        The XSM machine increments SP immediately before a PUSH operation. Hence the first PUSH operation will be storing data to address 4097 (and thus will not destroy the data in address 4096).
+                        <div class="syntax">MOV SP, 4096</div>
+                    </p>
+                  -->
+
+                    <p>
+
+                    To use the stack we need to set the stack pointer(SP). Always SP should
+                    point the top value of the stack. The XSM machine increments SP immedietely before a PUSH operation
+                    by XSM machine and hence the first PUSH operation will be storing
+                    data to address 4096. So, we need to initialize SP to 4095.
+
+
+
+                    <div class="syntax">MOV SP, 4095</div>
+
+                      </p>
+
+                    <p>
+                        Now, the arguments to a write operation must be pushed on to the stack:
+                        <br>
+                        Note that the contents which are to be written to the console are present in the register R0.
+                        So, we are not using the register R0.
+                        <b>Function Code</b> : "Write"
+                        <div class="syntax">
+                            MOV R2, "Write"<br>
+                            PUSH R2
+                        </div>
+                    </p>
+                    <p>
+                        <b>Argument 1</b> :  value -2 (see <a href="abi.html#nav-eXpOS-system-library-interface" target="_blank">ABI</a> for specification)
+                        <div class="syntax">
+                            MOV R2, -2<br>
+                            PUSH R2
+                        </div>
+                    </p>
+                <!--    <p>
+                        <b>Argument 2</b> : Address of the memory word to be pushed  -  Here value is 4096.
+                        <div class="syntax">
+                            MOV R2, 4096<br>
+                            PUSH R2
+                        </div>
+                    </p> -->
+                    <p>
+                      <b>Argument 2</b> : Data to be written (For this example, data is present in R0. So, we are pushing R0)
+                      <div class="syntax">
+                        PUSH R0
+                      </div>
+                    </p>
+                    <p>
+                        <b>Argument 3</b> : Blank /* Push any register */
+                        <div class="syntax">
+                            PUSH R0
+                        </div>
+                    </p>
+                     <p>
+                        <b>Storage for Return Value</b> :  Push any register
+                        <div class="syntax">
+                            PUSH R0
+                        </div>
+                    </p>
+                    <p>
+                        The main difference between the system call interface and the library interface come at the next instruction. If we were using the system call interface,  we would have called the interrupt for write (INT 7).   Here instead, we will always use <b>CALL 0</b> to transfer control to the library. (Remember that library file is loaded in the memory addresses 0 - 1023.). The library understands that the action requested is a write operation by looking at the function code passed as argument (in this case "Write"). If the action requested is a read operation, then "Read" is passed, and so on.
+                        <div class="syntax">
+                            CALL 0
+                        </div>
+                    </p>
+
+                    <p>
+						The status of the stack after the INT instruction will look as shown below<br>
+						<img src="img/libcallstack1.png">
+            <br>
+            Note that in the above diagram argument 2 is 5 because the contents of the register R0 is 5.
+					</p>
+
+                    <p>
+                        The above sequence of instructions will invoke the write system call from the library. Upon successful write operation, the library must retuen value 0 to the calling program through the stack. We assume here that the call will be successful.
+                    </p>
+                    <p>
+                        Now upon exit from the call :
+                        <ul>
+                            <li id="otis">1. The return value may be retrieved if required.</li>
+                            <li id="otis">2. The stack must be set back to the state before the call as stipulated in the ABI.  This is necessary to avoid loss of stack space after each call.</li>
+                        </ul>
+                    </p>
+                    <p>
+                        The following instructions will do the above.
+                        <div class="syntax">
+                        //  The following code must be executed after return from the system call<br>
+                        POP R0 // Pop and save the return value in some register<br>
+                        POP R1 // Pop and discard the argument3<br>
+                        POP R1 // Pop and discard the argument2<br>
+                        POP R1 // Pop and discard the argument1<br>
+                        POP R1 // Pop out the function code.<br>
+                        </div>
+                    </p>
+                    <p>
+                        The target_file will look as shown below after adding the Write system call.
+                      <!--  <script src="js/24948d2964c96f78c7dcd3b0f0d1e3fd.js"></script> -->
+                          <script src="js/ee19d513fc3a85c4ae1c572d8bd2a656.js"></script>
+                    </p>
+                    <p>
+                        Now we need to write logic in the library file to handle the request for Write system call. Earlier we have created the "library.lib" file with RET instruction alone. Now we will edit this file.
+                    </p>
+                    <p>
+                        When CALL 0 is executed, the IP+2 is pushed on the top of the stack and IP is set to 0. Therefore now IP points to the first instruction of the library file.
+                    </p>
+                    <p>
+                        Since every call to the library points IP to 0 address, we need to have logic to distinguish the type of request at this address. The information regarding the type of request can be found from the function code that is pushed as an argument on the stack. The function code can be obtained from the stack using SP - 5<b>[Why?]</b>.
+                    </p>
+                    <p>
+                        In this experiment we are dealing only with "Write" system call, so we will have our discussion only specific to it. After recognising the type of request we need to handle the request in the same way as we did in the previous experiment using system call interface. The arguments to be passed in the system call interface are system call number(5),-2, register holding the value to be written (It is at SP - 3) and a blank argument. The library simply has to copy the arguments 1 to 3 to the system call without any modification.
+                    </p>
+                    <p>
+                        Get the function code from the stack and compare if it is equal to "Write" and get the arguments from the stack.
+                        <div class="syntax">
+                            MOV R1, SP<br>
+                            MOV R2, 5<br>
+                            SUB R1, R2<br>
+                            MOV R2, "Write"<br>
+                            MOV R1, [R1]<br>
+                            EQ R1, R2<br>
+                            JZ R1, 62<br>
+                            MOV R1, SP<br>
+                            MOV R2, 4<br>
+                            SUB R1, R2<br>
+                            MOV R2, [R1]    //argument 1 at SP - 4<br>
+                            ADD R1, 1<br>
+                            MOV R3, [R1]    //argument 2 at SP - 3<br>
+                            ADD R1, 1<br>
+                            MOV R4, [R1]    //argument 3 at SP - 2<br>
+                        </div>
+                    </p>
+                    <p>
+                            Once you get the arguments, the procedure to invoke the system call is same as we did in the earlier experiment.
+                            <div class="syntax">
+                                /* pushing arguments and space for return value for system call */<br>
+                                MOV R5, 5       //System call number 5 for Write<br>
+                                PUSH R5<br>
+                                PUSH R2         //R2 contains [SP - 4] = -2<br>
+                                PUSH R3         //R3 contains [SP - 3] = 5 // Contains Value <br>
+                                PUSH R4         //R4 contains [SP - 2] = blank<br>
+                                PUSH R5         // space for return value<br>
+                                <br>
+                                /* trap instruction */<br>
+                                INT 7<br>
+                                <br>
+                                /* Pop the arguments and return value */<br>
+                                POP R1          //Pop and save return value<br>
+                                POP R2          //Pop and discard<br>
+                                POP R2          //Pop and discard<br>
+                                POP R2          //Pop and discard<br>
+                                POP R2          //Pop and discard<br>
+                            </div><br>
+                            The return value of the library is the same as the return value of the system call.  Hence the library must copy the return value of the system call back to the application as its own return value through the stack.
+                            <div class="syntax">
+                                /* Storing the return value on the top of the stack */<br>
+                                MOV R2, SP<br>
+                                MOV R3, 1<br>
+                                SUB R2, R3<br>
+                                MOV [R2], R1<br> // [SP - 1] = R1 (Return value was popped to R1 earlier)
+                                RET
+                            </div>
+                    </p>
+                    <p>
+                        The library.lib file will look as shown below after adding the code to handle Write system call.
+                        <script src="js/593f1d9b41ce0bc9ce6c6a173f96c68c.js"></script>
+                    </p>
+                    <p>
+                        <b>Important Note</b> : Your library code for read, write and exit may modify some of the registers R0, R1 etc.
+                        Hence, if you had stored some values into these registers before the call, those values will be lost while the
+                        library code is executed. To safely restore the values of the registers, the following procedure must be adopted.
+                        <ul>
+                            <li id="otis">1.  Push all registers in current use into the stack.  For example, if you wish to retain values of
+                               R0, R1 and R2 after the call, push these three registers into the stack.</li>
+                            <li id="otis">2.  Now, code the library call and return steps.</li>
+                            <li id="otis">3.  After return POP out the registers saved in the stack.  (Note that you must pop the registers out in reverse order of push).</li>
+                        </ul>
+                    </p>
+					<p>
+						<b>Exercise 6</b> : Implement read() and exit() functions of the library.
+					</p>
+					<p>
+						<b>Exercise 7</b> : Modify the program to read three numbers from the console and print the largest to perform I/O using the library interface.
+					</p>
+					<p>
+						<b>Exercise 8</b> : Modify the program to read numbers until a zero is entered from the console and print their sum to perform I/O using the library interface.
+					</p>
+				</article>
+            </div>
+        </section>
+    </body>
+</div>
+</div>
+    <footer class="center part clearfix">
+        <ul class="grid col-one-third social">
+            <li><a href="http://github.com/silcnitc">Github</a></li>
+        </ul>
+        <div class="grid col-one-third" style="color:black;">
+          <p style="font-weight: bold;">
+            Contributed By : <a href="http://athena.nitc.ac.in/~kmurali/" target="_blank">K Murali Krishnan</a>
+          </p>
+        </div>
+        <nav class="grid col-one-third ">
+            <ul >
+                <li><a href="index-2.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <!-- <li><a href="uc.html">Contact</a></li> -->
+            </ul>
+        </nav>
+        <br>
+    </footer>
+    <script>window.jQuery || document.write('<script src="js/jquery-1.7.2.min.js"><\/script>')</script>
+    <script src="js/scripts.js"></script>
+
+<!-- Mirrored from silcnitc.github.io/xsm-environment-tut.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:52:21 GMT -->
+</html>

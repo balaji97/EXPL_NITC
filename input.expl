@@ -1,17 +1,5 @@
-decl
-    int a[10][10], i, j, n;
-    string p;
-enddecl
 begin
-    n = 3;
-    i=0;
-    while(i<n) do
-        j=0;
-        while(j<n) do
-            read(a[i][j]);
-            j=j+1;
-        endwhile;
-        i=i+1;
-    endwhile;
-    write(a[0+1][1+1]);
+    write("hello");
+    write(2+3);
+    write(2+3);
 end

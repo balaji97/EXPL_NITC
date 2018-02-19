@@ -15,93 +15,69 @@
     void yyerror(char const *s);
 
 %}
-
-%token ID NUM START END READ WRITE ASSIGN PLUS MINUS MUL DIV IF THEN ELSE ENDIF WHILE DO ENDWHILE BREAK CONTINUE DECL ENDDECL INT STR 
+%token START
+%token END
+%token DECL
+%token ENDDECL
+%token IF
+%token THEN
+%token ELSE
+%token ENDIF
+%token WHILE
+%token DO
+%token ENDWHILE
+%token BREAK CONTINUE
+%token ID NUM INT STR 
+%token READ WRITE ASSIGN 
 %left PLUS MINUS
 %left MUL DIV
 %nonassoc LT LE GT GE NE EQ
 
 %%
 
-program: Declarations instructions | instructions;
 instructions:   START Slist END	{print($2); exit(1);}
 	       | START END		{print(NULL ); exit(1);}    
-
-Declarations :  DECL DeclList ENDDECL    {printSymbolTable();$$ = NULL;}
-                | DECL ENDDECL          {$$ = NULL;}
-                ;
-DeclList    :   DeclList Decl            {$$ = NULL;}
-                | Decl                  {$$ = NULL;}
-                ;
-Decl        :   Type VarList ';'        {declareVariables($1, $2);$$ = NULL;}
-                ;
-Type        :   INT {$$ = TYPE_INT;}
-                | STR {$$ = TYPE_STR;}
-            ;
-VarList     :   VarList ',' ID {$$ = appendVariable($1, $3, 1, 1, FALSE);}
-                | VarList ',' ID '[' NUM ']' 
-                {
-                    if($5->val <= 0)
-                        yyerror("Invalid array decl\n");
-                    int size = $5->val;
-                    int rows = 1;
-                    $$ = appendVariable($1, $3, size, rows, FALSE);
-                }
-                | VarList ',' ID '[' NUM ']' '[' NUM ']'
-                {
-                    if($5->val <= 0 || $8->val <= 0)
-                        yyerror("Invalid array decl\n");
-                    int size = ($5->val) * ($8->val);
-                    int rows = $5->val;
-                    $$ = appendVariable($1, $3, size, rows, FALSE);
-                }
-                | ID {$$ = makeVarList($1, 1, 1, FALSE);}
-                | ID '[' NUM ']' 
-                {
-                     if($3->val <= 0)
-                        yyerror("Invalid array decl\n");
-                    int size = $3->val;
-                    int rows = 1;
-                    $$ = makeVarList($1, size, rows, FALSE);
-                }
-                | ID '[' NUM ']' '[' NUM ']'
-                {
-                    if($3->val <= 0 || $6->val <= 0)
-                        yyerror("Invalid array decl\n");
-                    int size = ($3->val) * ($6->val);
-                    int rows = $3->val;
-                    $$ = makeVarList($1, size, rows, FALSE);
-                }
-                | VarList ',' MUL ID    {$$ = appendVariable($1, $4, 1, 1, TRUE);}
-                | MUL ID                {$$ = makeVarList($2, 1, 1, TRUE);}
-                ;
-
-	;
+           ;
+           
+           
 Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL);}
 	| Stmt		{$$=$1;}
 	;
+    
 
 Stmt :	InputStmt {$$=$1;}| OutputStmt {$$=$1;}| AsgStmt {$$=$1;}| IfStmt {$$=$1;}| WhileStmt	{$$=$1;} | ContinueStmt {$$ = $1;} | BreakStmt {$$ = $1;} 
 	;
+    
 
 InputStmt : READ '(' AsgE ')' ';'	{$$=createTree(0, NODE_READ, TYPE_NULL, NULL, $3, NULL, NULL, NULL, NULL);}
 	;
+    
 
 OutputStmt : WRITE '(' E ')' ';'{$$=createTree(0, NODE_WRITE, TYPE_NULL, NULL, $3, NULL, NULL, NULL, NULL);}
 	;
+    
 
 AsgStmt : AsgE ASSIGN E ';'	{$$=createTree(0, NODE_ASSIGN, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
 	;
+    
 
 IfStmt  : IF '(' E ')' THEN Slist ELSE Slist ENDIF ';' {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, $8, NULL, NULL);}
         | IF '(' E ')' THEN Slist ENDIF ';'            {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, NULL, NULL, NULL);}
         ;
+        
+        
 WhileStmt : WHILE '(' E ')' DO Slist ENDWHILE ';'     {$$ = createTree(0, NODE_WHILE, TYPE_NULL, NULL, $3, $6, NULL, NULL, NULL);}
             ;
+            
+            
 BreakStmt : BREAK ';'                               {$$ = createTree(0, NODE_BREAK, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
+            
+            
 ContinueStmt : CONTINUE ';'                         {$$ = createTree(0, NODE_CONTINUE, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
+            
+            
 E :   E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
 	| E MINUS E {$$=createTree(0, NODE_MINUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
 	| E MUL E 	{$$=createTree(0, NODE_MUL, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
@@ -117,6 +93,8 @@ E :   E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL, NULL,
     | '&' ID    {$$ = createTree(lookup($2->varname)->binding, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
     | AsgE      {$$ = $1;}
 	;
+    
+    
 AsgE:   | ID	    {$$=$1;}
         | ID '[' E ']'  
         {
@@ -140,6 +118,8 @@ AsgE:   | ID	    {$$=$1;}
             $$->nodetype = NODE_PTR;
         }
     ;
+    
+    
 %%
 
 void yyerror(char const *s)

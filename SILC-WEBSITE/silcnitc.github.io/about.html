@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<!-- Mirrored from silcnitc.github.io/about.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:50:48 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+<title>SILC | About</title>
+<meta charset="UTF-8">
+<link rel="stylesheet" href="css/style_new.css">
+<link rel="stylesheet" href="css/style.css">
+        <link rel="stylesheet" href="js/embed-2cd369fa1c0830bd3aa06c21d4f14a13e060d2d31bbaae740f4af4.css"><div id="gist28627206" class="gist">
+        <link rel="stylesheet" href="js/embed-cbe5b40fa72b0964f90d4919c2da8f8f94d7c9f6c2aa49c07f6fa3.css"><div id="gist28627206" class="gist">
+
+<!--[if lt IE 9]><script src="http://html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+<body>
+    <header id="navtop">
+        <a href="index-2.html" class="logo fleft"><img src="img/logo.png" alt=""></a>
+        <nav class="fright">
+            <ul>
+                <li><a href="index-2.html">Home</a></li>
+                <li><a href="about.html" class="navactive">About</a></li>
+                    <li><a href="help.html">Help</a></li>
+                    <li><a href="roadmap.html">Roadmap</a></li>
+                    <li><a href="documentation.html">Documentation</a></li>
+            </ul>
+        </nav>
+    </header>
+    <div class="about center part clearfix">
+      <header class="title">
+        <!--<p class="fl	eft">About</p>-->
+      </header>
+      <aside class="column4 mright">
+            <p class="mbottom">
+                This is an educational project which has been developed to give students a better insight to compiler development.
+            </p>
+            <menu>
+                <ul>
+                	<li><a href="#navphilo" class="arrow more">PHILOSOPHY</a></li>
+                	<li><a href="#navteam" class="arrow more">AUTHORS</a></li>
+                	<li><a href="#navlic" class="arrow more">LICENSE</a></li>
+                    <li><a href="#navplace" class="arrow more">WEBSITE</a></li>
+                </ul>
+            </menu>
+        </aside>
+      <section class="columnthird content">  <h2 class="mright"> ABOUT THE PROJECT</h2>
+        <article id="navphilo" class="detail">
+          <h3>PHILOSOPHY</h3>
+
+          <!--
+            <p>
+            This project aims to develop an online self-sufficient educational platform to help undergraduate Computer Science students understand the functioning of a compiler for a simple procedural language by writing a small toy compiler themselves.  (An object oriented extension for the language has been added subsequently.) The project will provide students with a <a href="roadmap.html" target="_blank">roadmap</a> for the development process and guide them along the roadmap with supporting documentation. Using the step-by-step guidance offered by the roadmap, the students will be able to build the compiler under minimal expert supervision.
+         </p>
+         <p>
+           The platform is designed assuming that the student has a basic knowledge of Data structures, Computer organization and a working proficiency of the C programming language. Being instructional in nature, this project tries to give some insight into the working of LEX, YACC and the usage of these tools to develop a compiler for an instructional language custom designed for the project - called ExpL (Experimental language).   Brief theoretical explanations are provided on a <i>need-to-do</i> basis.
+         </p>
+          <p>
+           The project is designed to be done concurrently with a theory course in Compiler Design, typically offered during the third year of an undergraduate CS curriculum.   It is by no means a replacement to the theory course, but is only designed to supplement it.    The project will help in solidifying the student's grasp of compiler design theory - about how the components of a compiler can be assembled together to form the whole.  The student will also experience the end-to-end process of translation from a source high level language to a target executable.
+         </p>
+         <p>
+           The roadmap first guides the student to build a simple expression compiler.  Static variables are then introduced to this expression compiler and control flow constructs are added next.  Till this phase, only integer type is allowed.  In the next step, support for string type is added to the language and type checking issues are discussed.  Support for arrays are added next.   Subroutines and run time allocation comes next and finally support for user defined types and dynamic memory allocation is added.  (A final phase of providing support for classes and subtype polymorphism has been added subsequently).  The road-map is designed in such a way that as far as practicable, only one new concept is introduced at a time.
+         </p>
+         <p>
+           Starting right from the first phase, the student has to generate code that can be loaded and executed by a simulator provided along with the platform.  The simulator is designed to load and run executable files satisfying a specified <a href="abi.html" target="_blank"> application binary interface specification(ABI)</a>.
+         </p>
+         <p>
+           It is our responsibility to explicitly state some central concepts that the project fails to teach.  Here are some among the key omissions:
+           <ul>
+             <li id="otis">
+               1.  The machine architecture, virtual memory model (and the target ABI in general) are unrealistically simple and custom made.  Consequently it is easy to generate code for the target platform, but the platform is far from any real system.  To illustrate the level of oversimplification,  a memory word of the target machine is assumed to be capable of storing an arbitrary integer or a string.  Floating point handling is omitted.  The executable file format is extremely simple to understand, but too restrictive for real use.  (There has been simplifications in the source language specification as well.  But those are less dramatic.)<br><br>
+             </li>
+             <li id = "otis">
+               2.  To avoid trouble with binary formatting, the executable file is allowed to contain mnemonic instructions rather than binary.  Students are still required to resolve symbolic references to actual logical addresses and only the replacement of symbolic instructions with actual binary instructions is avoided.<br><br>
+             </li>
+             <li id="otis">
+               3.  Code, register or memory optimizations are not attempted as these topics are beyond the scope of the project. The focus here is to get working target code generated.  The roadmap asks the students to directly traverse an intermediate abstract syntax tree representation of the program and directly generate assembly language code.  This is followed by a label translation pass to resolve labels in the target code.<br><br>
+             </li>
+             <li id="otis">
+               4.   Focus has not been placed on efficient data structuring or following software engineering practices.  The road-map suggests an implementation that can be built incrementally and is simple to comprehend.
+             </li>
+           </ul>
+         </p>
+         <p>
+           In short, the project is designed to help the student to gain knowledge, appreciation and insight into the working of compilers, but does not try to train the student in professional compiler writing.  This particular pedagogical choice has been taken to spare the student from the technicalities of machine architecture, executable/object formats and the complexities of the ABI of real systems – something that in our experience seems to drive a lot of students away from systems projects.  Our hope is that once the basic material is assimilated, the student will be more confident to get involved with these details in professional life.
+         </p>
+       -->
+
+       <ol>
+
+         Any pedagogical compiler implementation project offered as part of an undergraduate junior level
+compiler design course needs to satisfy two fundamental requirements:
+
+<br>
+
+     <li>
+       <br>
+      1. The student must be given as much depth and detail as possible about the central concepts. That
+is, the project must be sufficiently non-trivial to be instructive.
+     </li>
+
+     <br>
+     <li>
+      2. The quantity of work involved must not exceed what a student is able to complete in about four
+       months, taking also into consideration the fact that she/he would be crediting several other courses
+       concurrently. Thus, the project must be sufficiently simple to be do-able.
+     </li>
+
+      </ol>
+      <br>
+
+      <p>
+
+        The problem before the teacher is to decide on how much compromise on (1) must be done in favour of
+(2). The present project is our stance in this matter. We expain our choices here.
+
+      </p>
+
+      <p>
+
+        There are two aspects associated with the design and implementation of each major functional unit of a
+compiler. – 1) A <i>Policy</i> and 2) An implementation <i>Mechanism</i>. As an illustration, consider dynamic
+memory allocation. Fixed size allocation is a policy. The most common implementation mechanism is
+to have a run time library that manages allocation from the the heap. As another example, consider
+passing of parameters to functions. Call by value/call by reference are a policies. Passing
+values/addresses through a run time stack is the standard implementation mechanism. Yet another
+example, a language may describe a dynamic method binding policy for supporting subtype
+polymorphism in single inheritence hierarchy. Virtual function table mechanism is the most common
+way to implement the policy. Of course, each of the above policies and mechanisms need more detailed
+and concrete specification. Detailed descriptions of the policies and mechanisms associated with various
+functions of a compiler are given in the project documentation.
+
+      </p>
+
+      <p>
+
+        The pedagogical strategy is to specify a programming language that has a <i>very simple policy</i> associated
+with functional unit of the compiler. This allows the student to implement the policy easily, once the
+implementation mechanism is understood. For instance, fixed-size allocation policy is specified for
+dynamic memory allocation. We provide detailed tutorials for various implementation mechanisms
+necessary to implement the policies associated with each such functional unit of the compiler. This helps
+the student to learn the implementation mechanisms quickly. Once the student completes the
+implementation one simple policy that uses a particular mechanism, she will be in a position to visualize
+the implementation of more sophisticated policies associated with a particular functionality that use
+similar mechanisms without actually going through an implementation project.
+
+      </p>
+
+      <p>
+
+        The project is designed to be done concurrently with a theory course in Compiler Design, typically
+offered during the third year of an undergraduate CS curriculum. It by no means is a replacement to the
+theory course, but is only designed to suppliment it. The project will help in solidifying the student's
+grasp of compiler design theory - about how the components of a compiler can be assembled together to
+form the whole. The student will experience the end-to-end process of translation from a high level
+language source to a target executable. The road-map is designed in such a way that as far as practicable,
+only one new concept is introduced at a time.
+
+      </p>
+
+
+
+        <ol>
+          It is our responsiblity to explicitly state some central concepts that the project fails to teach. Here are
+some key omissions:
+
+<br>
+
+      <li>
+        <br>
+      1.  The machine architecture, virtual memory model (and the the target ABI in general) are unrealisitically
+simple and custom made. Consequently it is easy to generate code for the target platfform, but the
+platform is far from any real system. To illustrate the level of oversimplification, a memory word of the
+target machine is assumed to be capable of storing an arbitrary interger or a string. Floating point
+handling is ommitted. The executable file format is extremely simple to understand, but too restrictive for
+real use. (There are simplifications in the source language specification as well, but those are less
+dramatic.)
+      </li>
+<br>
+      <li>
+
+      2.  The project is front-end intensive, but has a thin back-end. Code, register or memory optimizations are
+  not attempted. The focus here is to get working target code generated as easily as possible. The roadmap
+  asks the students to directly traverse an intermediete abstract syntax tree representation of the program
+
+  and generate assembly language code. This is followed by a linking phase to resolve labels in the target
+  code. Improving the back-end code generation process would require data flow analysis (at least
+  liveliness analysis) which is better done with the support of tools like LLVM. Going into these
+  directions would make the project too heavy for one semester. Typically, a second course in compiler
+  design takes up these topics anyway.
+
+
+      </li>
+
+      <br>
+
+      <li>
+
+        3. Focus has not been placed on efficient data structuring or following software engineering practices
+  religiously. The road-map suggests a simple implementation that can be built incrementally.
+
+
+      </li>
+
+        </ol>
+
+        <br>
+
+
+        <p>
+
+          The project is designed to help the student to gain knowledge, appreciation and insight into the working
+of compilers, but does not try to train the student in professional compiler writing. This particular
+pedagogical choice has been taken to spare the student from the technicalities of machine architecture,
+executable/object formats and the complexities of the ABIs of real systems – something that in our
+experience seems to drive a lot of students away from systems projects. Our hope is that once the basic
+material is assimilated, the student will be more confident to get involved with these details in
+professional life.
+
+        </p>
+
+        <p>
+
+          This project is the second one in a suite of two student learning projects designed to tutor undergraduate
+CS juniors. The first one in the suite is an OS development project (exposnitc.github.io), which asks the
+student to implement a simple multi-tasking operating system on the same machine architecture used in
+the present project. The target code of the compiler implemented in the present project is designed to be
+executable by the OS implemented in the first project. Our hope is that by going through the projects, the
+student will gain a clear conceptual understanding of how the two central software systems – the OS and
+the compiler - work together in a computer system.
+
+        </p>
+
+
+
+        </article>
+        <article id="navteam" class="detail">
+          <h3>AUTHORS</h3>
+            <p>
+                The content in the website and the documentation has been authored in the Computer Science and Engineering Department, National Institute of Technology, Calicut under the guidance of <a href="mailto:kmurali@nitc.ac.in">Dr. Murali Krishnan	K.</a> The project's activity started in the year 2013 and is currently under progress. Below is a list of co-authors and contributors to the project.
+                The work evolved from an earlier version of the project a Simple Integer Language Compiler development student project under the guidance of Dr. Murali Krishnan K. and Dr. Vineeth Paleri. The work received technical support from Dr. Vineeth Paleri and Dr. Saleena N. .
+            </p>
+
+
+
+         <h5>Project team (2017-2018) </h5><br>
+          <a href="#">Jaini Phani Koushik</a><br>
+          <a href="#">Jampala Ritesh</a></a><br>
+          <a href="#">Madisetty Jayaprakash</a><br>
+          <a href="#">Subin Puleri</a></a><br>
+          <br>
+    	   <h5>Project team (2016-2017) </h5><br>
+          <a href="https://www.linkedin.com/in/dattathallam">Thallam Sai Sree Datta</a><br>
+          <a href="https://www.linkedin.com/in/n-ruthviik-0a0539100">N Ruthvik</a></a><br>
+          <br>
+        	<h5>Project team (2015-2016) </h5><br>
+        	<a href="https://www.linkedin.com/in/suryaharshanunnaguppala">Nunnaguppala Surya Harsha</a><br>
+        	<a href="https://in.linkedin.com/in/vishnupriyamatha">Vishnu Priya Matha</a><br>
+          <br>
+          <h5>Project team (2014-2015) </h5><br>
+          <a>Ashwathy T Revi</a><br>
+          <a>Subisha V</a><br><br>
+          <h5>Project team (2013-2014) </h5><br>
+          <a href="http://www.linkedin.com/in/nachivpn">Nachiappan V.</a><br>
+          <a href="http://in.linkedin.com/pub/arun-rajan-sharma/39/291/8a5">Arun Rajan</a><br>
+          <br>
+          <h5>Project team (2001-2002)</h5><br />
+          <a href="#">Jithesh Kumar O. V</a><br>
+          <a href="#">Dileep Mathew Thomas</a></a><br>
+<!--
+          Project report can be downloaded <a href="https://github.com/silcnitc/silcnitc.github.io/blob/master/report.pdf?raw=true">here</a><br> -->
+          <br>
+          	<h5>Technical Contributors</h5><br>
+        	<a>Peeyush Singh</a><br>
+          <!-- contact : peeyushsrj@gmail.com -->
+          <br />
+          <p>
+            Please send queries and bug reports to <b>kmuralinitc@gmail.com</b>
+          </p>
+
+        </article>
+    	<article id="navlic" class="detail">
+          <h3>LICENSE</h3>
+    				<a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/"><img alt="Creative Commons License" style="border-width:0" src="img/creativecommons.png" /></a><br /><br><span xmlns:dct="http://purl.org/dc/terms/" href="http://purl.org/dc/dcmitype/Text" property="dct:title" rel="dct:type">SILCNITC</span> by <a xmlns:cc="http://creativecommons.org/ns#" href="http://athena.nitc.ac.in/~kmurali/" property="cc:attributionName" rel="cc:attributionURL">Dr. Murali Krishnan K.</a> is licensed under a <a rel="license" href="http://creativecommons.org/licenses/by-nc/4.0/">Creative Commons Attribution-NonCommercial 4.0 International License</a>. Based on a work at <a xmlns:dct="http://purl.org/dc/terms/" href="https://github.com/silcnitc/" rel="dct:source">https://github.com/silcnitc/</a>
+        </article>
+        <article id="navplace" class="detail">
+          <h3>WEBSITE</h3>
+          <p>This website has been developed using HTML5, CSS3 and Javascript. This website's design is based on the <a href= "http://sylvainlafitte.com/"> Designa Studio </a>template. This website is hosted under Github pages and the entire website's source code can be found <a href ="http://github.com/silcnitc/silcnitc.github.io.git">here</a> </p>
+        </article>
+    </section>
+    </div>
+    <footer class="center part clearfix">
+    <ul class="social column3 mright">
+        <li><a href="https://github.com/silcnitc">Github</a></li>
+        </ul>
+            <div class="up column3 mright"> <a href="#navtop" class="ir">Go up</a> </div>
+          <nav class="column3">
+            <ul>
+              <li><a href="index-2.html">Home</a></li>
+              <li><a href="about.html">About</a></li>
+              <!-- <li><a href="uc.html">Contact</a></li> -->
+            </ul>
+          </nav>
+    </footer>
+    <script src="http://code.jquery.com/jquery.min.js"></script>
+    <script>window.jQuery || document.write('<script src="js/jquery-1.5.1.min.js"><\/script>')</script>
+    <script src="js/scripts.js"></script>
+    <!--[if (gte IE 6)&(lte IE 8)]>
+    <script src="js/selectivizr.js"></script>
+    <![endif]-->
+</body>
+
+<!-- Mirrored from silcnitc.github.io/about.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:50:49 GMT -->
+</html>

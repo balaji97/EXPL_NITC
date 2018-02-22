@@ -13,6 +13,7 @@
 	int yylex(void);
 	extern FILE *yyin;
     void yyerror(char const *s);
+    struct varList *list = NULL, *node = NULL;
 
 %}
 %token START
@@ -39,21 +40,22 @@ program: GDeclBlock MainBlock
         |MainBlock
         ;
 
-GDeclBlock: DECL GDeclList ENDDECL
+GDeclBlock: DECL GDeclList ENDDECL  {printSymbolTable();}
             |DECL ENDDECL
             ;
 GDeclList:  GDeclList GDecl 
             | GDecl
             ;
-GDecl:      Type GidList ';'
+GDecl:      Type GidList ';'        {declareVariables($1->type, list);}
             ;
-GidList:    GidList ',' Gid 
-            | Gid
+GidList:    GidList ',' Gid         {if(node)list = appendVariable(list, node);}
+            | Gid                   {if(node)list = node;}
             ;
-Gid:        ID
-            | ID '[' NUM ']'
-            | ID '[' NUM ']' '[' NUM ']'
-            | ID '(' ParamList ')'
+Gid:        ID                      {node = makeVarList($1, 1, 1, 0);}
+            | ID '[' NUM ']'        {node = makeVarList($1, $3->val, 1, 0);}
+            | ID '[' NUM ']' '[' NUM ']'    {int size = $3->val;size *= $6->val; node = makeVarList($1, size, $3->val, 0);}
+            | ID '(' ParamList ')'  {node = NULL;}
+            | MUL ID                {node = makeVarList($1, 1, 1, 1);}
             ;
 
 
@@ -65,8 +67,8 @@ ParamList:  ParamList ',' Param
             ;
 Param:      Type ID
             ;
-Type:       INT
-            |STR
+Type:       INT                     {$$ = createTree(0, NODE_AUX, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
+            |STR                    {$$ = createTree(0, NODE_AUX, TYPE_STR, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
 
 

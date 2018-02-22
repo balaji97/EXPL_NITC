@@ -1,6 +1,30 @@
 decl
-    int a, b, c[10], d[10][20], e(int f, int j);
+    int n, i, j, a[10], temp;
 enddecl
 begin
-    write("hello");
+    read(n);
+    i=0;
+    while(i<n) do
+        read(a[i]);
+        i = i+1;
+    endwhile;
+    i=0;
+    j=0;
+    while(i<n) do
+        j=0;
+         while(j<(n-i-1)) do
+            if(a[j] > a[j+1]) then
+                temp=a[j];
+                a[j]=a[j+1];
+                a[j+1]=temp;
+            endif;
+            j=j+1;
+        endwhile;
+        i=i+1;
+    endwhile;
+    i=0;
+    while(i<n) do
+        write(a[i]);
+        i=i+1;
+    endwhile;
 end

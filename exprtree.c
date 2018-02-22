@@ -500,17 +500,18 @@ void declareVariables(int type, struct varList *l)
 
 
 //Appends a new variable name to varlist
-struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows, int ispointer)
+struct varList* appendVariable(struct varList *l, struct varList *node)
 {
-    struct varList *temp = makeVarList(t, size, rows, ispointer);
-    temp->next = l;
-    return temp;
+    node->next = l;
+    return node;
 }
 
 
 //initialises varlist
 struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer)
 {
+    if(size <= 0)
+        yyerror("Invalid array declaration!");
     struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
     temp->varName = t->varname;
     temp->next = NULL;
@@ -519,4 +520,12 @@ struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer)
     temp->ispointer = ispointer;
     return temp;
 }
-
+void printVarList(struct varList *l)
+{
+    printf("Current varList:\n");
+    while(l != NULL)
+    {
+        printf("%s\n", l->varName);
+        l = l->next;
+    }
+}

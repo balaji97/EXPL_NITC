@@ -27,6 +27,8 @@
 #define NODE_CONTINUE 20
 
 #define NODE_PTR 21
+#define NODE_AUX 22
+
 
 #define TYPE_INT 101
 #define TYPE_BOOL 102
@@ -75,7 +77,7 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 void semanticCheck(struct tnode *t);
 void yyerror(char const *s);
 void declareVariables(int type, struct varList *l);
-struct varList* appendVariable(struct varList *l, struct tnode *t, int size, int rows, int ispointer);
+struct varList* appendVariable(struct varList *l, struct varList *node);
 struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer);
 
 void declCheck(struct tnode *t);
@@ -86,4 +88,4 @@ void install(char *name, int type, int size, int rows, int ispointer);
 
 int alloc(int size);
 
-void printSymbolTable();
+void printSymbolTable(); 

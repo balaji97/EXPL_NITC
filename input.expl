@@ -1,5 +1,6 @@
+decl
+    int a, b, c[10], d[10][20], e(int f, int j);
+enddecl
 begin
     write("hello");
-    write(2+3);
-    write(2+3);
 end

@@ -35,8 +35,50 @@
 
 %%
 
-instructions:   START Slist END	{print($2); exit(1);}
-	       | START END		{print(NULL ); exit(1);}    
+program: GDeclBlock MainBlock
+        |MainBlock
+        ;
+
+GDeclBlock: DECL GDeclList ENDDECL
+            |DECL ENDDECL
+            ;
+GDeclList:  GDeclList GDecl 
+            | GDecl
+            ;
+GDecl:      Type GidList ';'
+            ;
+GidList:    GidList ',' Gid 
+            | Gid
+            ;
+Gid:        ID
+            | ID '[' NUM ']'
+            | ID '[' NUM ']' '[' NUM ']'
+            | ID '(' ParamList ')'
+            ;
+
+
+
+
+ParamList:  ParamList ',' Param
+            |Param
+            |
+            ;
+Param:      Type ID
+            ;
+Type:       INT
+            |STR
+            ;
+
+
+
+
+
+MainBlock: instructions{exit(1);};
+
+
+
+instructions:   START Slist END	{print($2);}
+	       | START END		{print(NULL );}    
            ;
            
            

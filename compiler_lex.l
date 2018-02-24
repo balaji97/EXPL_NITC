@@ -45,7 +45,7 @@
 [0-9]+ {
 		intval=atoi(yytext);
 		yylval=createTree(intval, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);
-		return NUM;}
+		return NUM;} 
 ["']([a-z0-9A-Z .,+\-*/=_:><?!@#$%^&\t\n]+)["'] {
                     strval = strdup(yytext);
                     yylval = createTree(0, NODE_NUM, TYPE_STR, strval, NULL, NULL, NULL, NULL, NULL);

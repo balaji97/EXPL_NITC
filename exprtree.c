@@ -529,3 +529,27 @@ void printVarList(struct varList *l)
         l = l->next;
     }
 }
+
+struct paramList* makeParamList(char *name, int type)
+{
+    struct paramList *temp = (struct paramList*)malloc(sizeof(struct paramList));
+    temp->name = strdup(name);
+    temp->type = type;
+    temp->next = NULL;
+}
+
+struct paramList* appendParam(struct paramList *list, struct paramList *node)
+{
+    node->next = list;
+    return node;
+}
+
+void printParamList(struct paramList *plist)
+{
+    printf("Name\tType\n");
+    while(plist)
+    {
+        printf("%s\t%d\n", plist->name, plist->type);
+        plist = plist->next;
+    }
+}

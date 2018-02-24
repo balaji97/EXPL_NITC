@@ -67,6 +67,13 @@ typedef struct Gsymbol
 }Gsymbol;
 struct Gsymbol *symbol_top = NULL;
 
+typedef struct paramList
+{
+    char *name;
+    int type;
+    struct paramList *next;
+}paramList;
+
 int sp = 4096; 
 
 reg_index codeGen(struct tnode *t);
@@ -80,6 +87,9 @@ void declareVariables(int type, struct varList *l);
 struct varList* appendVariable(struct varList *l, struct varList *node);
 struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer);
 
+struct paramList* makeParamList(char *name, int type);
+struct paramList* appendParam(struct paramList *list, struct paramList *node);
+
 void declCheck(struct tnode *t);
 
 
@@ -89,3 +99,4 @@ void install(char *name, int type, int size, int rows, int ispointer);
 int alloc(int size);
 
 void printSymbolTable(); 
+void printParamList(struct paramList *plist);

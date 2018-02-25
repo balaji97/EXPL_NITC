@@ -54,6 +54,7 @@ typedef struct varList
 {
     char *varName;
     int size, rows, ispointer;
+    struct paramList *plist;
     struct varList *next;
 }varList;
 int reg;
@@ -62,7 +63,8 @@ FILE *target_file, *fp;
 typedef struct Gsymbol
 {
     char *name;
-    int type, size, binding, rows, ispointer;
+    int type, size, binding, rows, ispointer, flabel;
+    struct paramList *plist;
     struct Gsymbol *next;
 }Gsymbol;
 struct Gsymbol *symbol_top = NULL;
@@ -73,6 +75,20 @@ typedef struct paramList
     int type;
     struct paramList *next;
 }paramList;
+
+typedef struct Lsymbol
+{
+    char *name;
+    int type, binding;
+    struct Lsymbol *next;
+}Lsymbol;
+
+int functionLabelCount = 0;
+
+int getFunctionLabel()
+{
+    return functionLabelCount++;
+}
 
 int sp = 4096; 
 
@@ -85,7 +101,7 @@ void semanticCheck(struct tnode *t);
 void yyerror(char const *s);
 void declareVariables(int type, struct varList *l);
 struct varList* appendVariable(struct varList *l, struct varList *node);
-struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer);
+struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer, struct paramList *plist);
 
 struct paramList* makeParamList(char *name, int type);
 struct paramList* appendParam(struct paramList *list, struct paramList *node);
@@ -94,7 +110,7 @@ void declCheck(struct tnode *t);
 
 
 struct Gsymbol* lookup(char *s);
-void install(char *name, int type, int size, int rows, int ispointer);
+void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist);
 
 int alloc(int size);
 

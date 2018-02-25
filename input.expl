@@ -1,5 +1,5 @@
 decl
-    int n, i, j, a[10], temp, fact(int a, int b, int c);
+    int n, i, mod(int a, int b), j, min(int a, int b), a[10], temp, max(int a, int b);
 enddecl
 begin
     read(n);

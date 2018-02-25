@@ -65,7 +65,7 @@ struct Gsymbol *lookup(char *name)
     return temp;
 }
 //Appends a new entry to symbol table
-void install(char *name, int type, int size, int rows, int ispointer)
+void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist)
 {
     if(lookup(name) != NULL)
         yyerror("Variable redeclared!\n");
@@ -79,8 +79,12 @@ void install(char *name, int type, int size, int rows, int ispointer)
     temp->ispointer = ispointer;
 //    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
     temp->binding = alloc(size);
+    temp->plist = plist;
+    if(size == -1)
+        temp->flabel = getFunctionLabel();
     temp->next = symbol_top;
     symbol_top = temp;
+    printParamList(symbol_top->plist);
 }
 
 
@@ -493,7 +497,8 @@ void declareVariables(int type, struct varList *l)
 //    printf("Following variables of type %d declared:\n", type);
     while(l != NULL)
     {
-        install(l->varName, type, l->size, l->rows, l->ispointer);
+        install(l->varName, type, l->size, l->rows, l->ispointer, l->plist);
+        
         l = l->next;
     }    
 }
@@ -508,16 +513,15 @@ struct varList* appendVariable(struct varList *l, struct varList *node)
 
 
 //initialises varlist
-struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer)
+struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer, struct paramList *plist)
 {
-    if(size <= 0)
-        yyerror("Invalid array declaration!");
     struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
     temp->varName = t->varname;
     temp->next = NULL;
     temp->size = size;
     temp->rows = rows;
     temp->ispointer = ispointer;
+    temp->plist = plist;
     return temp;
 }
 void printVarList(struct varList *l)

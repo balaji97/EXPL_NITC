@@ -55,11 +55,11 @@ GidList:    GidList ',' Gid         {if(node)list = appendVariable(list, node);}
             | Gid                   {if(node)list = node;}
             ;
 Gid:        
-            ID '[' NUM ']'        {node = makeVarList($1, $3->val, 1, 0);}
-            | ID '[' NUM ']' '[' NUM ']'    {int size = $3->val;size *= $6->val; node = makeVarList($1, size, $3->val, 0);}
-            | ID '(' ParamList ')'  {node = makeVarList($1, 1, 1, 0);printParamList(plist);}
-            | MUL ID                {node = makeVarList($1, 1, 1, 1);}
-            | ID                      {node = makeVarList($1, 1, 1, 0);}
+             ID '[' NUM ']' '[' NUM ']'    {int size = $3->val;size *= $6->val;if(size <= 0)yyerror("Invalid array declaration\n"); node = makeVarList($1, size, $3->val, 0, NULL);}
+            | ID '[' NUM ']'        {if($3->val <= 0)yyerror("Invalid array declaration\n");node = makeVarList($1, $3->val, 1, 0, NULL);}
+            | ID '(' ParamList ')'  {node = makeVarList($1, -1, 1, 0, plist);}
+            | MUL ID                {node = makeVarList($1, 1, 1, 1, NULL);}
+            | ID                      {node = makeVarList($1, 1, 1, 0, NULL);}
             ;
 
 FDefBlock:  FDefBlock Fdef

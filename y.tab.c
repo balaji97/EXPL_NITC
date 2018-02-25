@@ -583,9 +583,9 @@ static const yytype_uint8 yydefact[] =
       60,    60,    60,    60,    60,     0,     0,    62,     0,     0,
       40,     0,     0,    21,     0,    10,     0,    56,    46,    47,
       48,    49,    50,    51,    52,    53,    54,    55,    60,    60,
-      60,    38,    39,    12,     0,    14,    23,     0,    60,    60,
+      60,    38,    39,    13,     0,    14,    23,     0,    60,    60,
        0,     0,    20,     0,    60,     0,     0,    63,     0,    19,
-      60,    42,    43,    13,     0,    41
+      60,    42,    43,    12,     0,    41
 };
 
   /* YYPGOTO[NTERM-NUM].  */
@@ -709,7 +709,7 @@ static const yytype_uint8 yyr1[] =
 static const yytype_uint8 yyr2[] =
 {
        0,     2,     3,     2,     1,     3,     2,     2,     1,     3,
-       3,     1,     4,     7,     4,     2,     1,     2,     1,     7,
+       3,     1,     7,     4,     4,     2,     1,     2,     1,     7,
        3,     1,     0,     2,     1,     1,     1,     3,     2,     2,
        1,     1,     1,     1,     1,     1,     1,     1,     5,     5,
        4,    10,     8,     8,     2,     2,     3,     3,     3,     3,
@@ -1416,31 +1416,31 @@ yyreduce:
 
   case 12:
 #line 58 "compiler_yacc.y" /* yacc.c:1646  */
-    {node = makeVarList((yyvsp[-3]), (yyvsp[-1])->val, 1, 0);}
+    {int size = (yyvsp[-4])->val;size *= (yyvsp[-1])->val;if(size <= 0)yyerror("Invalid array declaration\n"); node = makeVarList((yyvsp[-6]), size, (yyvsp[-4])->val, 0, NULL);}
 #line 1421 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 13:
 #line 59 "compiler_yacc.y" /* yacc.c:1646  */
-    {int size = (yyvsp[-4])->val;size *= (yyvsp[-1])->val; node = makeVarList((yyvsp[-6]), size, (yyvsp[-4])->val, 0);}
+    {if((yyvsp[-1])->val <= 0)yyerror("Invalid array declaration\n");node = makeVarList((yyvsp[-3]), (yyvsp[-1])->val, 1, 0, NULL);}
 #line 1427 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 14:
 #line 60 "compiler_yacc.y" /* yacc.c:1646  */
-    {node = makeVarList((yyvsp[-3]), 1, 1, 0);printParamList(plist);}
+    {node = makeVarList((yyvsp[-3]), -1, 1, 0, plist);}
 #line 1433 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 15:
 #line 61 "compiler_yacc.y" /* yacc.c:1646  */
-    {node = makeVarList((yyvsp[-1]), 1, 1, 1);}
+    {node = makeVarList((yyvsp[-1]), 1, 1, 1, NULL);}
 #line 1439 "y.tab.c" /* yacc.c:1646  */
     break;
 
   case 16:
 #line 62 "compiler_yacc.y" /* yacc.c:1646  */
-    {node = makeVarList((yyvsp[0]), 1, 1, 0);}
+    {node = makeVarList((yyvsp[0]), 1, 1, 0, NULL);}
 #line 1445 "y.tab.c" /* yacc.c:1646  */
     break;
 

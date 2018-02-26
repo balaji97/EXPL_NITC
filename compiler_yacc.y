@@ -42,6 +42,12 @@ program: GDeclBlock FDefBlock MainBlock
         |MainBlock
         ;
 
+FDefBlock:  FDefBlock Fdef
+            | Fdef 
+            ;
+Fdef:       Type ID '(' ParamList ')' instructions   {functionCheck($2, plist, $1->type);}
+            ;
+
 GDeclBlock:  
              DECL GDeclList ENDDECL  {printSymbolTable();}
             |DECL ENDDECL
@@ -49,8 +55,9 @@ GDeclBlock:
 GDeclList:  GDeclList GDecl 
             | GDecl
             ;
-GDecl:      Type GidList ';'        {declareVariables($1->type, list);}
+GDecl:      Type GidList ';'        {declareVariables($1->type, list);node=list=NULL;pnode=plist=NULL;}
             ;
+            
 GidList:    GidList ',' Gid         {if(node)list = appendVariable(list, node);}
             | Gid                   {if(node)list = node;}
             ;
@@ -62,35 +69,38 @@ Gid:
             | ID                      {node = makeVarList($1, 1, 1, 0, NULL);}
             ;
 
-FDefBlock:  FDefBlock Fdef
-            | Fdef 
-            ;
-Fdef:       Type ID '(' ParamList ')' '{' '}'   {}
-
-
 ParamList:  ParamList ',' Param     {plist = appendParam(plist, pnode);}
             |Param                  {plist = pnode;}
-            |
+            |                       {plist=pnode=NULL;}
             ;
 Param:      Type ID                 {pnode = makeParamList($2->varname, $1->type);}
+            ;
+
+MainBlock: instructions{exit(1);}
+            ;
+
+instructions:   START LDeclBlock Slist END	{print($3);}
+            | START LDeclBlock END	{print(NULL);}
+            | START Slist END      {print($2);} 
+	       | START END		{print(NULL );}    
+           ;
+           
+LDeclBlock: DECL LDeclList ENDDECL  {printLocalTable();deallocateLocalTable();}
+            |DECL ENDDECL
+            ;
+LDeclList:  LDeclList LDecl
+            | LDecl
+            ;
+            
+LDecl:      Type LidList ';'        {declareLocalVariables($1->type, list);node=list=NULL;pnode=plist=NULL;}
+
+LidList:    LidList ',' Gid         {if(node)list = appendVariable(list, node);}
+            | Gid                   {if(node)list = node;}
             ;
 Type:       INT                     {$$ = createTree(0, NODE_AUX, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
             |STR                    {$$ = createTree(0, NODE_AUX, TYPE_STR, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
 
-
-
-
-
-MainBlock: instructions{exit(1);};
-
-
-
-instructions:   START Slist END	{print($2);}
-	       | START END		{print(NULL );}    
-           ;
-           
-           
 Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL);}
 	| Stmt		{$$=$1;}
 	;

@@ -53,38 +53,50 @@ int alloc(int size)
 //Symbol table structure
 
 //Finds entry with specified name in symbol table
-struct Gsymbol *lookup(char *name)
+
+void printLocalTable()
 {
-    struct Gsymbol *temp = symbol_top;
-    while(temp != NULL)
+    struct Lsymbol *temp = local_symbol_top;
+    printf("Name\tType\tBinding\n");
+    while(temp)
     {
-        if(strcmp(name, temp->name) == 0)
-            break;
+        printf("%s\t%d\t%d\n", temp->name, temp->type, temp->binding);
         temp = temp->next;
     }
-    return temp;
+        
 }
-//Appends a new entry to symbol table
-void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist)
+void deallocateLocalTable()
 {
-    if(lookup(name) != NULL)
-        yyerror("Variable redeclared!\n");
-    struct Gsymbol *temp;
-    temp = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
-    
-    temp->name = name;
-    temp->type = type;
-    temp->size = size;
-    temp->rows = rows;
-    temp->ispointer = ispointer;
-//    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
-    temp->binding = alloc(size);
-    temp->plist = plist;
-    if(size == -1)
-        temp->flabel = getFunctionLabel();
-    temp->next = symbol_top;
-    symbol_top = temp;
-    printParamList(symbol_top->plist);
+    struct Lsymbol *temp;
+    while(local_symbol_top)
+    {
+        temp = local_symbol_top;
+        local_symbol_top = local_symbol_top->next;
+        free(temp);
+    }
+    local_symbol_top = NULL;
+}
+void deallocateParamList(struct paramList *plist)
+{
+    struct paramList *temp;
+    while(plist)
+    {
+        temp = plist;
+        plist = plist->next;
+        free(temp);
+    }
+    plist = NULL;
+}
+void deallocateVarList(struct varList *list)
+{
+    struct varList *temp;
+    while(list)
+    {
+        temp = list;
+        list = list->next;
+        free(temp);
+    }
+    list = NULL;
 }
 
 
@@ -485,7 +497,8 @@ void printSymbolTable()
     printf("Name\tType\tSize\tRows\tPointer\tBinding\n");
     while(temp != NULL)
     {
-        printf("%s\t%d\t%d\t%d\t%d\t%d\n", temp->name, temp->type, temp->size, temp->rows, temp->ispointer, temp->binding);
+        printf("%s\t%d\t%d\t%d\t%d\t%d\nParameter List:\n", temp->name, temp->type, temp->size, temp->rows, temp->ispointer, temp->binding);
+        printParamList(temp->plist);
         temp = temp->next;
     }
 }
@@ -498,11 +511,81 @@ void declareVariables(int type, struct varList *l)
     while(l != NULL)
     {
         install(l->varName, type, l->size, l->rows, l->ispointer, l->plist);
-        
+     //   printParamList(l->plist);
         l = l->next;
     }    
 }
-
+struct Gsymbol *lookup(char *name)
+{
+    struct Gsymbol *temp = symbol_top;
+    while(temp != NULL)
+    {
+        if(strcmp(name, temp->name) == 0)
+            break;
+        temp = temp->next;
+    }
+    return temp;
+}
+struct Lsymbol* lookup_local(char *name)
+{
+    struct Lsymbol *temp = local_symbol_top;
+    while(temp != NULL)
+    {
+        if(strcmp(name, temp->name) == 0)
+            break;
+        temp = temp->next;
+    }
+    return temp;
+}
+//Appends a new entry to symbol table
+void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist)
+{
+    if(lookup(name) != NULL)
+        yyerror("Variable redeclared!\n");
+    struct Gsymbol *temp;
+    temp = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+    temp->name = name;
+    temp->type = type;
+    temp->size = size;
+    temp->rows = rows;
+    temp->ispointer = ispointer;
+//    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
+    temp->binding = alloc(size);
+    temp->plist = plist;
+//    printParamList(temp->plist);
+    if(size == -1)
+        temp->flabel = getFunctionLabel();
+    temp->next = symbol_top;
+    symbol_top = temp;
+    printSymbolTable(); 
+}
+void install_params(struct paramList *plist)
+{
+    while(plist != NULL)
+    {
+        install_local(plist->name, plist->type);
+        plist = plist->next;
+    }
+}
+void install_local(char *name, int type)
+{
+    if(lookup_local(name) != NULL)
+        yyerror("Local variable redeclared!\n");
+    struct Lsymbol *temp = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
+    temp->name = name;
+    temp->type = type;
+    temp->binding = alloc(1);
+    temp->next = local_symbol_top;
+    local_symbol_top = temp;
+}
+void declareLocalVariables(int type, struct varList *l)
+{
+    while(l)
+    {
+        install_local(l->varName, type);
+        l = l->next;
+    }
+}
 
 //Appends a new variable name to varlist
 struct varList* appendVariable(struct varList *l, struct varList *node)
@@ -556,4 +639,28 @@ void printParamList(struct paramList *plist)
         printf("%s\t%d\n", plist->name, plist->type);
         plist = plist->next;
     }
+}
+
+void functionCheck(struct tnode *function, struct paramList *plist, int type)
+{
+    struct Gsymbol *temp = lookup(function->varname);
+    
+    if(temp)
+    {
+       // printParamList(temp->plist);
+        struct paramList *list = temp->plist;
+        while(list && plist)
+        {
+            if(list->type != plist->type)
+                yyerror("Parameter list mismatch!\n");
+            list = list->next;
+            plist = plist->next;
+        }
+        if(plist || list)
+            yyerror("Parameter list mismatch!\n");
+        if(type != temp->type)
+            yyerror("Return type mismatch!\n");
+    }
+    else
+        yyerror("Undeclared function!\n");
 }

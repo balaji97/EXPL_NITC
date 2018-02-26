@@ -82,6 +82,7 @@ typedef struct Lsymbol
     int type, binding;
     struct Lsymbol *next;
 }Lsymbol;
+struct Lsymbol *local_symbol_top = NULL;
 
 int functionLabelCount = 0;
 
@@ -112,7 +113,17 @@ void declCheck(struct tnode *t);
 struct Gsymbol* lookup(char *s);
 void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist);
 
+void install_local(char *name, int type);
+void install_params(struct paramList *plist);
+struct Lsymbol* lookup_local(char *name);
+
 int alloc(int size);
 
 void printSymbolTable(); 
 void printParamList(struct paramList *plist);
+
+void functionCheck(struct tnode *function, struct paramList *plist, int type);
+
+void declareLocalVariables(int type, struct varList *list);
+
+void deallocateLocalTable();

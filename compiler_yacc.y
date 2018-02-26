@@ -45,20 +45,41 @@ program: GDeclBlock FDefBlock MainBlock
 FDefBlock:  FDefBlock Fdef
             | Fdef 
             ;
-Fdef:       Type ID '(' ParamList ')' instructions   {functionCheck($2, plist, $1->type);}
+MainBlock: instructions{exit(1);}
+            ;
+Fdef:       Type ID '(' ParamList ')' instructions   {functionCheck($2, plist, $1->type);printLocalTable();plist = NULL;deallocateLocalTable();}
             ;
 
 GDeclBlock:  
              DECL GDeclList ENDDECL  {printSymbolTable();}
-            |DECL ENDDECL
+            |DECL ENDDECL           {}
             ;
 GDeclList:  GDeclList GDecl 
             | GDecl
             ;
-GDecl:      Type GidList ';'        {declareVariables($1->type, list);node=list=NULL;pnode=plist=NULL;}
+GDecl:      Type GidList ';'        {declareVariables($1->type, list);node=list=NULL;}
             ;
             
 GidList:    GidList ',' Gid         {if(node)list = appendVariable(list, node);}
+            | Gid                   {if(node)list = node;}
+            ;
+
+instructions:   START LDeclBlock Slist END	{printf("Ping\n");}
+            | START LDeclBlock END	{print(NULL);}
+            | START Slist END      {print($2);} 
+	       | START END		{print(NULL );}    
+           ;
+           
+LDeclBlock: DECL LDeclList ENDDECL  {}
+            |DECL ENDDECL           {}
+            ;
+LDeclList:  LDeclList LDecl
+            | LDecl
+            ;
+            
+LDecl:      Type LidList ';'        {declareLocalVariables($1->type, list);node=list=NULL;}
+
+LidList:    LidList ',' Gid         {if(node)list = appendVariable(list, node);}
             | Gid                   {if(node)list = node;}
             ;
 Gid:        
@@ -68,40 +89,18 @@ Gid:
             | MUL ID                {node = makeVarList($1, 1, 1, 1, NULL);}
             | ID                      {node = makeVarList($1, 1, 1, 0, NULL);}
             ;
-
-ParamList:  ParamList ',' Param     {plist = appendParam(plist, pnode);}
-            |Param                  {plist = pnode;}
-            |                       {plist=pnode=NULL;}
-            ;
-Param:      Type ID                 {pnode = makeParamList($2->varname, $1->type);}
-            ;
-
-MainBlock: instructions{exit(1);}
-            ;
-
-instructions:   START LDeclBlock Slist END	{print($3);}
-            | START LDeclBlock END	{print(NULL);}
-            | START Slist END      {print($2);} 
-	       | START END		{print(NULL );}    
-           ;
-           
-LDeclBlock: DECL LDeclList ENDDECL  {printLocalTable();deallocateLocalTable();}
-            |DECL ENDDECL
-            ;
-LDeclList:  LDeclList LDecl
-            | LDecl
-            ;
-            
-LDecl:      Type LidList ';'        {declareLocalVariables($1->type, list);node=list=NULL;pnode=plist=NULL;}
-
-LidList:    LidList ',' Gid         {if(node)list = appendVariable(list, node);}
-            | Gid                   {if(node)list = node;}
-            ;
 Type:       INT                     {$$ = createTree(0, NODE_AUX, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
             |STR                    {$$ = createTree(0, NODE_AUX, TYPE_STR, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
 
-Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL);}
+ParamList:  ParamList ',' Param     {plist = appendParam(plist, pnode);}
+            |Param                  {plist = pnode;}
+            |
+            ;
+Param:      Type ID                 {pnode = makeParamList($2->varname, $1->type);}
+            ;
+
+Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL);printf("Ping\n");}
 	| Stmt		{$$=$1;}
 	;
     
@@ -118,7 +117,7 @@ OutputStmt : WRITE '(' E ')' ';'{$$=createTree(0, NODE_WRITE, TYPE_NULL, NULL, $
 	;
     
 
-AsgStmt : AsgE ASSIGN E ';'	{$$=createTree(0, NODE_ASSIGN, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
+AsgStmt : AsgE ASSIGN E ';'	{$$=createTree(0, NODE_ASSIGN, TYPE_AUX, NULL, $1, $3, NULL, NULL, NULL);}
 	;
     
 

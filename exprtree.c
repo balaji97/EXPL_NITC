@@ -48,7 +48,10 @@ int alloc(int size)
         return ret;
     }
 }
-
+void dealloc(int size)
+{
+    sp -= size;
+}
 
 //Symbol table structure
 
@@ -73,6 +76,7 @@ void deallocateLocalTable()
         temp = local_symbol_top;
         local_symbol_top = local_symbol_top->next;
         free(temp);
+        dealloc(1);
     }
     local_symbol_top = NULL;
 }
@@ -84,6 +88,7 @@ void deallocateParamList(struct paramList *plist)
         temp = plist;
         plist = plist->next;
         free(temp);
+        dealloc(1);
     }
     plist = NULL;
 }
@@ -95,6 +100,7 @@ void deallocateVarList(struct varList *list)
         temp = list;
         list = list->next;
         free(temp);
+        dealloc(1);
     }
     list = NULL;
 }
@@ -438,6 +444,32 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
     return temp;
 }
 
+
+struct Gsymbol *lookup(char *name)
+{
+    struct Gsymbol *temp = symbol_top;
+    while(temp != NULL)
+    {
+        if(strcmp(name, temp->name) == 0)
+            break;
+        temp = temp->next;
+    }
+    return temp;
+}
+struct Lsymbol* lookup_local(char *name)
+{
+    struct Lsymbol *temp = local_symbol_top;
+    while(temp != NULL)
+    {
+        if(strcmp(name, temp->name) == 0)
+            break;
+        temp = temp->next;
+    }
+    return temp;
+}
+
+
+
 //Checks if the node variable has been declared
 void declCheck(struct tnode *t)
 {
@@ -445,12 +477,28 @@ void declCheck(struct tnode *t)
         return;
     if(t->nodetype != NODE_VAR)
         return;
-    struct Gsymbol *temp = lookup(t->varname);
-    if(temp == NULL)
+    struct Lsymbol *temp_local;
+    temp_local = lookup_local(t->varname);
+    struct Gsymbol *temp = NULL;
+    if(temp_local == NULL)
+        printSymbolTable();
+    else
+    {
+        int something = temp_local->type;
+        printf("%d\n", something);
+        t->type = something;
+        printf("%d\n", t->type);       //temp_local->type = 0;
+    }
+    printf("Hello\n");
+    if(temp_local == NULL && temp == NULL)
         yyerror("Error! Undeclared variable.\n");
-    t->type = temp->type;
     t->gentry = temp;
+    t->lentry = temp_local;
+    
 }
+
+
+
 //Checks for type mismatch and other semantic errors
 void semanticCheck(struct tnode *t)
 {
@@ -483,7 +531,11 @@ void semanticCheck(struct tnode *t)
                             yyerror("Error. Comparision type mismatch.\n");
         case NODE_ASSIGN:  
                         if(t->ptr1->type != t->ptr2->type)
+                        {
+                        //    printf("%s\t%d\t%d\n", t->ptr1->varname, t->ptr1->type, t->ptr2->type);
+                            
                             yyerror("Error. Assign type mismatch.\n");
+                        }
                         break;
         default:
                         break;
@@ -497,8 +549,7 @@ void printSymbolTable()
     printf("Name\tType\tSize\tRows\tPointer\tBinding\n");
     while(temp != NULL)
     {
-        printf("%s\t%d\t%d\t%d\t%d\t%d\nParameter List:\n", temp->name, temp->type, temp->size, temp->rows, temp->ispointer, temp->binding);
-        printParamList(temp->plist);
+        printf("%s\t%d\t%d\t%d\t%d\t%d\n", temp->name, temp->type, temp->size, temp->rows, temp->ispointer, temp->binding);
         temp = temp->next;
     }
 }
@@ -515,28 +566,7 @@ void declareVariables(int type, struct varList *l)
         l = l->next;
     }    
 }
-struct Gsymbol *lookup(char *name)
-{
-    struct Gsymbol *temp = symbol_top;
-    while(temp != NULL)
-    {
-        if(strcmp(name, temp->name) == 0)
-            break;
-        temp = temp->next;
-    }
-    return temp;
-}
-struct Lsymbol* lookup_local(char *name)
-{
-    struct Lsymbol *temp = local_symbol_top;
-    while(temp != NULL)
-    {
-        if(strcmp(name, temp->name) == 0)
-            break;
-        temp = temp->next;
-    }
-    return temp;
-}
+
 //Appends a new entry to symbol table
 void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist)
 {
@@ -557,7 +587,6 @@ void install(char *name, int type, int size, int rows, int ispointer, struct par
         temp->flabel = getFunctionLabel();
     temp->next = symbol_top;
     symbol_top = temp;
-    printSymbolTable(); 
 }
 void install_params(struct paramList *plist)
 {
@@ -652,15 +681,28 @@ void functionCheck(struct tnode *function, struct paramList *plist, int type)
         while(list && plist)
         {
             if(list->type != plist->type)
+            {
+            //    printParamList(plist);
+            //    printParamList(list);
                 yyerror("Parameter list mismatch!\n");
+            }
             list = list->next;
             plist = plist->next;
         }
         if(plist || list)
+        {
+            
+        //    printParamList(plist);
+        //    printParamList(list);
             yyerror("Parameter list mismatch!\n");
+        }
         if(type != temp->type)
+        {    
             yyerror("Return type mismatch!\n");
+        }
     }
     else
+    {
         yyerror("Undeclared function!\n");
+    }
 }

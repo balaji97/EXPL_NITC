@@ -1,14 +1,14 @@
 decl
-    int a, max(), fact(int a), min(int a, int b);
+    int min(int a, int b), max(int a, int b, int c);
 enddecl
 int min(int a, int b)
 begin
+    decl
+        string k;
+        int p;
+    enddecl
+    k = "hello";
 end
-int max()
-begin
-end
-int fact(int a)
-begin
-end
+
 begin
 end

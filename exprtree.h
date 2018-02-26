@@ -35,6 +35,7 @@
 #define TYPE_NULL 103
 #define TYPE_STR 104
 #define TYPE_PTR 105
+#define TYPE_AUX 106
 
 #define TRUE 1
 #define FALSE 0
@@ -47,6 +48,7 @@ typedef struct tnode
 	int nodetype;
     struct tnode *index1, *index2;
     struct Gsymbol *gentry;
+    struct Lsymbol *lentry;
 	struct tnode *ptr1,*ptr2, *ptr3;
 }tnode;
 

@@ -28,7 +28,7 @@
 
 #define NODE_PTR 21
 #define NODE_AUX 22
-
+#define NODE_FCALL 23
 
 #define TYPE_INT 101
 #define TYPE_BOOL 102
@@ -50,6 +50,7 @@ typedef struct tnode
     struct Gsymbol *gentry;
     struct Lsymbol *lentry;
 	struct tnode *ptr1,*ptr2, *ptr3;
+    struct tnode *paramList;
 }tnode;
 
 typedef struct varList
@@ -99,7 +100,7 @@ reg_index codeGen(struct tnode *t);
 reg_index getReg(void);
 void freeReg(void);
 void print(struct tnode *t);
-struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2, struct tnode *ptr3, struct tnode *index1, struct tnode *index2);
+struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2, struct tnode *ptr3, struct tnode *index1, struct tnode *index2, struct tnode *paramList);
 void semanticCheck(struct tnode *t);
 void yyerror(char const *s);
 void declareVariables(int type, struct varList *l);
@@ -123,6 +124,8 @@ int alloc(int size);
 
 void printSymbolTable(); 
 void printParamList(struct paramList *plist);
+
+void paramCheck(struct tnode *function, struct tnode *paramList);
 
 void functionCheck(struct tnode *function, struct paramList *plist, int type);
 

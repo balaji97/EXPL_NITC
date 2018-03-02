@@ -89,8 +89,8 @@ Gid:
             | MUL ID                {node = makeVarList($1, 1, 1, 1, NULL);}
             | ID                      {node = makeVarList($1, 1, 1, 0, NULL);}
             ;
-Type:       INT                     {$$ = createTree(0, NODE_AUX, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
-            |STR                    {$$ = createTree(0, NODE_AUX, TYPE_STR, NULL, NULL, NULL, NULL, NULL, NULL);}
+Type:       INT                     {$$ = createTree(0, NODE_AUX, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
+            |STR                    {$$ = createTree(0, NODE_AUX, TYPE_STR, NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
 
 ParamList:  ParamList ',' Param     {plist = appendParam(plist, pnode);}
@@ -100,60 +100,64 @@ ParamList:  ParamList ',' Param     {plist = appendParam(plist, pnode);}
 Param:      Type ID                 {pnode = makeParamList($2->varname, $1->type);}
             ;
 
-Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL);printf("Ping\n");}
+Slist :	Slist Stmt	{$$=createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL, NULL);printf("Ping\n");}
 	| Stmt		{$$=$1;}
 	;
     
 
-Stmt :	InputStmt {$$=$1;}| OutputStmt {$$=$1;}| AsgStmt {$$=$1;}| IfStmt {$$=$1;}| WhileStmt	{$$=$1;} | ContinueStmt {$$ = $1;} | BreakStmt {$$ = $1;} 
+Stmt :	InputStmt {$$=$1;}| OutputStmt {$$=$1;}| AsgStmt {$$=$1;}| IfStmt {$$=$1;}| WhileStmt	{$$=$1;} | ContinueStmt {$$ = $1;} | BreakStmt {$$ = $1;} | CallStmt {$$ = $1;}
 	;
     
 
-InputStmt : READ '(' AsgE ')' ';'	{$$=createTree(0, NODE_READ, TYPE_NULL, NULL, $3, NULL, NULL, NULL, NULL);}
+InputStmt : READ '(' AsgE ')' ';'	{$$=createTree(0, NODE_READ, TYPE_NULL, NULL, $3, NULL, NULL, NULL, NULL, NULL);}
 	;
     
 
-OutputStmt : WRITE '(' E ')' ';'{$$=createTree(0, NODE_WRITE, TYPE_NULL, NULL, $3, NULL, NULL, NULL, NULL);}
+OutputStmt : WRITE '(' E ')' ';'{$$=createTree(0, NODE_WRITE, TYPE_NULL, NULL, $3, NULL, NULL, NULL, NULL, NULL);}
 	;
     
 
-AsgStmt : AsgE ASSIGN E ';'	{$$=createTree(0, NODE_ASSIGN, TYPE_AUX, NULL, $1, $3, NULL, NULL, NULL);}
+AsgStmt : AsgE ASSIGN E ';'	{$$=createTree(0, NODE_ASSIGN, TYPE_AUX, NULL, $1, $3, NULL, NULL, NULL, NULL);}
 	;
     
 
-IfStmt  : IF '(' E ')' THEN Slist ELSE Slist ENDIF ';' {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, $8, NULL, NULL);}
-        | IF '(' E ')' THEN Slist ENDIF ';'            {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, NULL, NULL, NULL);}
+IfStmt  : IF '(' E ')' THEN Slist ELSE Slist ENDIF ';' {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, $8, NULL, NULL, NULL);}
+        | IF '(' E ')' THEN Slist ENDIF ';'            {$$ = createTree(0, NODE_IF, TYPE_NULL, NULL, $3, $6, NULL, NULL, NULL, NULL);}
         ;
         
         
-WhileStmt : WHILE '(' E ')' DO Slist ENDWHILE ';'     {$$ = createTree(0, NODE_WHILE, TYPE_NULL, NULL, $3, $6, NULL, NULL, NULL);}
+WhileStmt : WHILE '(' E ')' DO Slist ENDWHILE ';'     {$$ = createTree(0, NODE_WHILE, TYPE_NULL, NULL, $3, $6, NULL, NULL, NULL, NULL);}
             ;
             
             
-BreakStmt : BREAK ';'                               {$$ = createTree(0, NODE_BREAK, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
+BreakStmt : BREAK ';'                               {$$ = createTree(0, NODE_BREAK, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
             
             
-ContinueStmt : CONTINUE ';'                         {$$ = createTree(0, NODE_CONTINUE, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
+ContinueStmt : CONTINUE ';'                         {$$ = createTree(0, NODE_CONTINUE, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
-            
-            
-E :   E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
-	| E MINUS E {$$=createTree(0, NODE_MINUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
-	| E MUL E 	{$$=createTree(0, NODE_MUL, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
-	| E DIV E 	{$$=createTree(0, NODE_DIV, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL);}
-    | E LT E 	{$$=createTree(0, NODE_LT, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
-    | E LE E 	{$$=createTree(0, NODE_LE, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
-	| E GT E 	{$$=createTree(0, NODE_GT, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
-    | E GE E 	{$$=createTree(0, NODE_GE, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
-    | E NE E 	{$$=createTree(0, NODE_NE, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
-    | E EQ E 	{$$=createTree(0, NODE_EQ, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL);}
+                   
+E : CallStmt    {$$ = $1;}
+    | E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+	| E MINUS E {$$=createTree(0, NODE_MINUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+	| E MUL E 	{$$=createTree(0, NODE_MUL, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+	| E DIV E 	{$$=createTree(0, NODE_DIV, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+    | E LT E 	{$$=createTree(0, NODE_LT, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+    | E LE E 	{$$=createTree(0, NODE_LE, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+	| E GT E 	{$$=createTree(0, NODE_GT, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+    | E GE E 	{$$=createTree(0, NODE_GE, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+    | E NE E 	{$$=createTree(0, NODE_NE, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL, NULL);}
+    | E EQ E 	{$$=createTree(0, NODE_EQ, TYPE_BOOL, NULL, $1, $3, NULL, NULL, NULL, NULL);}
     | '(' E ')' {$$=$2;}
 	| NUM       {$$ = $1;}
-    | '&' ID    {$$ = createTree(lookup($2->varname)->binding, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL);}
+    | '&' ID    {$$ = createTree(lookup($2->varname)->binding, NODE_NUM, TYPE_INT, NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
     | AsgE      {$$ = $1;}
 	;
     
+CallStmt : ID '(' ExprList ')' ';'  {struct Gsymbol *temp = lookup($1->varname);$$ = createTree(0, NODE_FCALL, temp->type, temp->name, NULL, NULL, NULL, NULL, NULL, $3); list = NULL;}
+    ;
+ExprList : ExprList ',' E   {$$ = createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL, NULL);}
+            | E    {$$ = $1;}
     
 AsgE:   | ID	    {$$=$1;}
         | ID '[' E ']'  

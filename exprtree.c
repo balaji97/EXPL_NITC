@@ -392,9 +392,13 @@ void inorder(struct tnode *t)
     inorder(t->ptr3);
 }
 
+void paramCheck(struct tnode *function, struct tnode *paramList)
+{
+    return;
+}
 
 //Creates a new node for AST with given parameters
-struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3, struct tnode *index1, struct tnode *index2)
+struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3, struct tnode *index1, struct tnode *index2, struct tnode *paramList)
 {
 	struct tnode *temp;
 	temp=(struct tnode*)malloc(sizeof(struct tnode));
@@ -412,6 +416,10 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
     temp->ptr3=ptr3;
     temp->index1 = index1;
     temp->index2 = index2;
+    
+    paramCheck(temp, paramList);
+    
+    temp->paramList = paramList;
     
     declCheck(ptr1);
     declCheck(ptr2);
@@ -443,6 +451,7 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 */    
     return temp;
 }
+
 
 
 struct Gsymbol *lookup(char *name)

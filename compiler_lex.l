@@ -66,7 +66,7 @@
 "!="	{return NE;}
 
 [\n \t] {}
-[();,\[\]&] 	{return *yytext;}
+[();,\[\]&{}] 	{return *yytext;}
 . 	{
 		yyerror("unknown character\n");
 		exit(1);

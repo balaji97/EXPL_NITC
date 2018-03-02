@@ -47,7 +47,7 @@ FDefBlock:  FDefBlock Fdef
             ;
 MainBlock: instructions{exit(1);}
             ;
-Fdef:       Type ID '(' ParamList ')' instructions   {functionCheck($2, plist, $1->type);printLocalTable();plist = NULL;deallocateLocalTable();}
+Fdef:       Type ID '(' ParamList ')' '{' instructions '}'   {functionCheck($2, plist, $1->type);printLocalTable();plist = NULL;deallocateLocalTable();}
             ;
 
 GDeclBlock:  

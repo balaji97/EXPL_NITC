@@ -3,13 +3,19 @@ decl
 enddecl
 int min(int a, int b)
 {
-begin
-    decl
-        string k;
-        int p;
-    enddecl
-    k = "hello";
-end
+    begin
+        decl
+            string k;
+            int p;
+        enddecl
+        k = "hello";
+    end
 }
+
 begin
+    decl 
+        int i, j;
+        string a, b;
+    enddecl
+    min(i+j, i-j, i);
 end

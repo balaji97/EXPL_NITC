@@ -392,8 +392,57 @@ void inorder(struct tnode *t)
     inorder(t->ptr3);
 }
 
+void printTree(struct tnode *t)
+{
+    if(t==NULL)
+        return;
+    printf("Value\tNodetype\tType\n");
+    printNode(t);
+    printf("First child:\n");
+    printNode(t->ptr1);
+    printf("Second child:\n");
+    printNode(t->ptr2);
+    printf("Third child:\n");
+    printNode(t->ptr3);
+    printTree(t->ptr1);
+    printTree(t->ptr2);
+    printTree(t->ptr3);
+}
+void printNode(struct tnode *t)
+{
+    if(t == NULL)
+        return;
+    printf("%d\t%d\t%d\n", t->val, t->nodetype, t->type);
+    return;
+}
+
 void paramCheck(struct tnode *function, struct tnode *paramList)
 {
+    struct Gsymbol *gentry = lookup(function->varname);
+    if(gentry == NULL)
+        return;
+    if(gentry->size != -1)
+        return;
+    struct paramList *plist = gentry->plist;
+    struct tnode *cmp;
+    while(plist != NULL && paramList != NULL)
+    {
+        
+        if(paramList->nodetype == NODE_CONN)
+            cmp = paramList->ptr2;
+        else
+            cmp = paramList;
+        printf("Param Name:\t%s\nParam type:\t%d\nCall type:\t%d\n", plist->name, plist->type, cmp->type);
+        if(plist->type != cmp->type)
+            yyerror("Function call: parameter type mismatch\n");
+        plist = plist->next;
+        if(paramList->nodetype == NODE_CONN)
+            paramList = paramList->ptr1;
+        else
+            paramList = NULL;
+    }
+    if(plist || paramList)
+        yyerror("Function call: parameter list mismatch\n");
     return;
 }
 
@@ -417,7 +466,8 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
     temp->index1 = index1;
     temp->index2 = index2;
     
-    paramCheck(temp, paramList);
+    if(temp->nodetype == NODE_FCALL)
+        paramCheck(temp, paramList);
     
     temp->paramList = paramList;
     
@@ -456,6 +506,8 @@ struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode 
 
 struct Gsymbol *lookup(char *name)
 {
+    if(name == NULL)
+        return NULL;
     struct Gsymbol *temp = symbol_top;
     while(temp != NULL)
     {
@@ -498,7 +550,7 @@ void declCheck(struct tnode *t)
         t->type = something;
         printf("%d\n", t->type);       //temp_local->type = 0;
     }
-    printf("Hello\n");
+    //printf("Hello\n");
     if(temp_local == NULL && temp == NULL)
         yyerror("Error! Undeclared variable.\n");
     t->gentry = temp;
@@ -507,7 +559,15 @@ void declCheck(struct tnode *t)
 }
 
 
-
+void checkTree(struct tnode *t)
+{
+    if(t == NULL)
+        return;
+    semanticCheck(t);
+    checkTree(t->ptr1);
+    checkTree(t->ptr2);
+    checkTree(t->ptr3);
+}
 //Checks for type mismatch and other semantic errors
 void semanticCheck(struct tnode *t)
 {

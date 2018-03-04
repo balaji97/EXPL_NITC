@@ -132,3 +132,6 @@ void functionCheck(struct tnode *function, struct paramList *plist, int type);
 void declareLocalVariables(int type, struct varList *list);
 
 void deallocateLocalTable();
+
+void printNode(struct tnode *t);
+void printTree(struct tnode *t);

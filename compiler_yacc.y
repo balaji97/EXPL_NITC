@@ -64,7 +64,7 @@ GidList:    GidList ',' Gid         {if(node)list = appendVariable(list, node);}
             | Gid                   {if(node)list = node;}
             ;
 
-instructions:   START LDeclBlock Slist END	{printf("Ping\n");}
+instructions:   START LDeclBlock Slist END	
             | START LDeclBlock END	{print(NULL);}
             | START Slist END      {print($2);} 
 	       | START END		{print(NULL );}    
@@ -136,7 +136,11 @@ BreakStmt : BREAK ';'                               {$$ = createTree(0, NODE_BRE
             
 ContinueStmt : CONTINUE ';'                         {$$ = createTree(0, NODE_CONTINUE, TYPE_NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);}
             ;
-                   
+
+ExprList : ExprList ',' E   {$$ = createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL, NULL);}
+            | E    {$$ = $1;}
+    ;
+
 E : CallStmt    {$$ = $1;}
     | E PLUS E 	{$$=createTree(0, NODE_PLUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL, NULL);}
 	| E MINUS E {$$=createTree(0, NODE_MINUS, TYPE_INT, NULL, $1, $3, NULL, NULL, NULL, NULL);}
@@ -154,11 +158,9 @@ E : CallStmt    {$$ = $1;}
     | AsgE      {$$ = $1;}
 	;
     
-CallStmt : ID '(' ExprList ')' ';'  {struct Gsymbol *temp = lookup($1->varname);$$ = createTree(0, NODE_FCALL, temp->type, temp->name, NULL, NULL, NULL, NULL, NULL, $3); list = NULL;}
+CallStmt : ID '(' ExprList ')' ';'  {struct Gsymbol *temp = lookup($1->varname);if(temp == NULL)printf("Call to undefined function\n");else$$ = createTree(0, NODE_FCALL, temp->type, temp->name, NULL, NULL, NULL, NULL, NULL, $3);}
     ;
-ExprList : ExprList ',' E   {$$ = createTree(0, NODE_CONN, TYPE_NULL, NULL, $1, $2, NULL, NULL, NULL, NULL);}
-            | E    {$$ = $1;}
-    
+
 AsgE:   | ID	    {$$=$1;}
         | ID '[' E ']'  
         {

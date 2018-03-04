@@ -1,15 +1,17 @@
+decl
+    int a[10][10], i, j, n;
+    string p;
+enddecl
 begin
-	read(a);
-	b = a;
-	while(1 == 1) do
-		if(a == 0) then
-			break;
-		endif;
-		read(a);
-		if(a == 2) then
-			continue;
-		endif;
-		b = b + a;
-	endwhile;
-	write(b);
+    n = 3;
+    i=0;
+    while(i<n) do
+        j=0;
+        while(j<n) do
+            read(a[i][j]);
+            j=j+1;
+        endwhile;
+        i=i+1;
+    endwhile;
+    write(a[0+1][1+1]);
 end

@@ -1,6 +1,4 @@
-//Register Allocation for code generation
-reg_index getReg()
-{
+reg_index getReg(){
 	if(reg>=20){
 		printf("Out of registers\n");
 		exit(1);
@@ -13,151 +11,202 @@ void freeReg(){
 		reg--;
 }
 
-
-//Loop structure for using break and continue
-struct loop
-{
-    int a, b;
-    struct loop *next;
-} *l = NULL;
-
-
-//Assigning labels for JMP statements in code generation
-int labelCount = 0;
-
-int getLabel()
-{
-    return labelCount++;
+int getLabel(){
+	return ++label;
 }
 
-int retLabel()
-{
-    return (labelCount - 1);
-}
+reg_index codeGen(struct tnode *t){
+	reg_index r1, r2, r3;
+	int l1, l2;
+	struct Lsymbol *Ltemp;
+	struct Gsymbol *Gtemp;
+	struct Paramstruct *Ptemp;
+	struct tnode *temp;
 
+	if(t==NULL)
+		return r1;
 
-//Allocates mamory for local variables
-int alloc(int size)
-{
-    int ret = sp;
-    sp += size;
-    if(sp - 1 > 5118)
-        yyerror("Stack overflow!\n");
-    else
-    {
-        return ret;
-    }
-}
-void dealloc(int size)
-{
-    sp -= size;
-}
-
-//Symbol table structure
-
-//Finds entry with specified name in symbol table
-
-void printLocalTable()
-{
-    struct Lsymbol *temp = local_symbol_top;
-    printf("Name\tType\tBinding\n");
-    while(temp)
-    {
-        printf("%s\t%d\t%d\n", temp->name, temp->type, temp->binding);
-        temp = temp->next;
-    }
-        
-}
-void deallocateLocalTable()
-{
-    struct Lsymbol *temp;
-    while(local_symbol_top)
-    {
-        temp = local_symbol_top;
-        local_symbol_top = local_symbol_top->next;
-        free(temp);
-        dealloc(1);
-    }
-    local_symbol_top = NULL;
-}
-void deallocateParamList(struct paramList *plist)
-{
-    struct paramList *temp;
-    while(plist)
-    {
-        temp = plist;
-        plist = plist->next;
-        free(temp);
-        dealloc(1);
-    }
-    plist = NULL;
-}
-void deallocateVarList(struct varList *list)
-{
-    struct varList *temp;
-    while(list)
-    {
-        temp = list;
-        list = list->next;
-        free(temp);
-        dealloc(1);
-    }
-    list = NULL;
-}
-
-
-//Recursively traverses AST and generates corresponding XSM code
-reg_index codeGen(struct tnode *t)
-{
-    int label_1, label_2, label_3;
-	reg_index r1,r2,r3, r4, r5;
-    if(t == NULL)
-        return r1;
-	switch(t->nodetype)
-    {
+	switch(t->nodetype){
 		case NODE_NUM:
 			r1=getReg();
-            if(t->type == TYPE_INT)
-                fprintf(target_file, "MOV R%d, %d\n", r1, t->val);
-            else
-            {
-                fprintf(target_file, "MOV R%d, %s\n", r1, t->varname);
-               
-            }
-            return r1;
-            break;
-		case NODE_VAR:
-        case NODE_PTR:
+			fprintf(target_file, "MOV R%d, %d\n", r1, t->val);
+			break;
+		case NODE_STR:
 			r1=getReg();
-			r2=lookup(t->varname)->binding;
-            if(t->index1 != NULL)
-            {
-                r3=codeGen(t->index1);
-                r5 = lookup(t->varname)->rows;
-                fprintf(target_file, "MUL R%d, %d\n", r3, r5);
-                if(t->index2 != NULL)
-                {
-                    r4 = codeGen(t->index2);
-                    fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
-                    freeReg();
-                }
-                fprintf(target_file, "ADD R%d, %d\n", r3, r2);
-                fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
-                freeReg();
-            }
-            else
-            {
-                if(t->nodetype == NODE_PTR)
-                {
-                    r3 = getReg();
-                    fprintf(target_file, "MOV R%d, [%d]\n", r3, r2);
-                    fprintf(target_file, "MOV R%d, [R%d]\n", r1, r3);
-                    freeReg();
-                }
-                else
-                    fprintf(target_file, "MOV R%d, [%d]\n", r1, r2);
-            }
-            return r1;
+			fprintf(target_file, "MOV R%d, \"%s\"\n", r1, t->varname);
+			break;
+		case NODE_ID:
+			r1=getReg();
+			Ltemp=LLookup(t->varname);
+			Gtemp=GLookup(t->varname);
+			Ptemp=PLookup(t->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "ADD R%d, %d\n", r1, Ltemp->binding);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r2=3;
+				while(strcmp(Ptemp->name, t->varname)){
+					r2++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "SUB R%d, %d\n", r1, r2);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else if(Gtemp!=NULL)
+				fprintf(target_file, "MOV R%d, [%d]\n", r1, Gtemp->binding);
+			else{
+				printf("Unknown variable: %s\n", t->varname);
+				exit(1);
+			}
+			break;
+		case NODE_ARRAY:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			break;
+		case NODE_MATRIX:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			fprintf(target_file, "MUL R%d, %d\n", r1, Gtemp->size1);
+			r2=codeGen(t->ptr3);
+			fprintf(target_file, "ADD R%d, R%d\n", r1, r2);
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			freeReg();
+			break;
+		case NODE_PTR:
+			r1=getReg();
+			Ltemp=LLookup(t->ptr1->varname);
+			Gtemp=GLookup(t->ptr1->varname);
+			Ptemp=PLookup(t->ptr1->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "ADD R%d, %d\n", r1, Ltemp->binding);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r3=3;
+				while(strcmp(Ptemp->name, t->ptr1->varname)){
+					r3++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "SUB R%d, %d\n", r1, r3);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else if(Gtemp!=NULL){
+				fprintf(target_file, "MOV R%d, [%d]\n", r1, Gtemp->binding);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else{
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			break;
+		case NODE_FUNC:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown function: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+
+			r1=0;
+			Ptemp=Gtemp->paramlist;
+			while(Ptemp!=NULL){
+				r1++;
+				Ptemp=Ptemp->next;
+			}
+
+			r2=0;
+			temp=t->ptr2;
+			while(temp!=NULL){
+				r2++;
+				temp=temp->ptr2;
+			}
+
+			if(r1!=r2){
+				printf("Incorrect no. of arguments: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+
+			r1=0;
+			r2--;
+			Ptemp=Gtemp->paramlist;
+			while(Ptemp!=NULL){
+				r3=0;
+				temp=t->ptr2;
+				while(r3<r2){
+					r3++;
+					temp=temp->ptr2;
+				}
+				if(Ptemp->type!=temp->ptr1->type){
+					printf("Incorrect paramter: %s\n", Ptemp->name);
+					exit(1);
+				}
+				r2--;
+				Ptemp=Ptemp->next;
+			}
+
+			for(r2=0;r2<=reg;r2++)
+				fprintf(target_file, "PUSH R%d\n", r2);
+			reg=-1;
+			r1=codeGen(t->ptr2);
+			r1=getReg();
+			fprintf(target_file, "PUSH R%d\n", r1);
+			fprintf(target_file, "CALL F%d\n", Gtemp->flabel);
+			fprintf(target_file, "POP R%d\n", r1);
+			freeReg();
+			r3=0;
+			r1=getReg();
+			Ptemp=Gtemp->paramlist;
+			while(Ptemp!=NULL){
+				fprintf(target_file, "POP R%d\n", r1);
+				r3++;
+				Ptemp=Ptemp->next;
+			}
+			reg=r2;
+			freeReg();
+			for(r2--;r2>=0;r2--){
+				fprintf(target_file, "POP R%d\n", r2);
+				r3++;
+			}
+			r1=getReg();
+			fprintf(target_file, "MOV R%d, SP\n", r1);
+			fprintf(target_file, "ADD R%d, %d\n", r1, r3+1);
+			fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			break;
+		case NODE_ARG:
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "PUSH R%d\n", r1);
+			freeReg();
+			if(t->ptr2!=NULL)
+				r1=codeGen(t->ptr2);
+			break;
+		case NODE_RET:
+			r1=codeGen(t->ptr1);
+			r2=getReg();
+			fprintf(target_file, "MOV R%d, BP\n", r2);
+			fprintf(target_file, "SUB R%d, 2\n", r2);
+			fprintf(target_file, "MOV [R%d], R%d\n", r2, r1);
+			freeReg();
+			freeReg();
+			break;
 		case NODE_PLUS:
 			r1=codeGen(t->ptr1);
 			r2=codeGen(t->ptr2);
@@ -165,16 +214,11 @@ reg_index codeGen(struct tnode *t)
 			freeReg();
 			break;
 		case NODE_MINUS:
-//            fprintf(target_file, "Entering sub, reg = %d\n", reg);
-            
 			r1=codeGen(t->ptr1);
-//            fprintf(target_file, "Mid sub, reg = %d\n", reg);
 			r2=codeGen(t->ptr2);
 			fprintf(target_file, "SUB R%d, R%d\n", r1, r2);
-
-//			fprintf(target_file, "Exiting sub, reg = %d\n", reg);
 			freeReg();
-            break;
+			break;
 		case NODE_MUL:
 			r1=codeGen(t->ptr1);
 			r2=codeGen(t->ptr2);
@@ -187,181 +231,459 @@ reg_index codeGen(struct tnode *t)
 			fprintf(target_file, "DIV R%d, R%d\n", r1, r2);
 			freeReg();
 			break;
+		case NODE_MOD:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "MOD R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_LT:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "LT R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_GT:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "GT R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_LE:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "LE R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_GE:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "GE R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_NE:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "NE R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_EQ:
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "EQ R%d, R%d\n", r1, r2);
+			freeReg();
+			break;
+		case NODE_AND:
+			l1=getLabel();
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "JZ R%d, L%d\n", r1, l1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "MOV R%d, R%d\n", r1, r2);
+			fprintf(target_file, "L%d:\n", l1);
+			freeReg();
+			break;
+		case NODE_OR:
+			l1=getLabel();
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "JNZ R%d, L%d\n", r1, l1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "MOV R%d, R%d\n", r1, r2);
+			fprintf(target_file, "L%d:\n", l1);
+			freeReg();
+			break;
+		case NODE_NOT:
+			l1=getLabel();
+			l2=getLabel();
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "JZ R%d, L%d\n", r1, l1);
+			fprintf(target_file, "MOV R%d, 0\n", r1);
+			fprintf(target_file, "JMP L%d\n", l2);
+			fprintf(target_file, "L%d:\n", l1);
+			fprintf(target_file, "MOV R%d, 1\n", r1);
+			fprintf(target_file, "L%d:\n", l2);
+			freeReg();
+			break;
+		case NODE_NEG:
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "MUL R%d, -1\n", r1);
+			break;
 		case NODE_ASSIGN:
 			r1=codeGen(t->ptr2);
-			r2=lookup(t->ptr1->varname)->binding;
-            if(t->ptr1->index1 != NULL)
-            {
-            //    printf("Non array assignment\n");
-                r3=codeGen(t->ptr1->index1);
-                r5 = lookup(t->ptr1->varname)->rows;
-                fprintf(target_file, "MUL R%d, %d\n", r3, r5);
-                if(t->ptr1->index2 != NULL)
-                {
-                    r4 = codeGen(t->ptr1->index2);
-                    fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
-                }
-                fprintf(target_file, "ADD R%d, %d\n", r3, r2);
-                fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
-                freeReg();
-                freeReg();
-            }
-            else
-            {
-                if(t->ptr1->nodetype == NODE_PTR)
-                {
-                    r3 = getReg();
-                    fprintf(target_file, "MOV R%d, [%d]\n", r3, r2);    
-                    fprintf(target_file, "MOV [R%d], R%d\n", r3, r1);
-                    freeReg();
-                }
-                else
-                    fprintf(target_file, "MOV [%d], R%d\n", r2, r1);
-            }
-            freeReg();
+			r2=getReg();
+			Ltemp=LLookup(t->ptr1->varname);
+			Gtemp=GLookup(t->ptr1->varname);
+			Ptemp=PLookup(t->ptr1->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r2);
+				fprintf(target_file, "ADD R%d, %d\n", r2, Ltemp->binding);
+				fprintf(target_file, "MOV [R%d], R%d\n", r2, r1);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r3=3;
+				while(strcmp(Ptemp->name, t->ptr1->varname)){
+					r3++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r2);
+				fprintf(target_file, "SUB R%d, %d\n", r2, r3);
+				fprintf(target_file, "MOV [R%d], R%d\n", r2, r1);
+			}
+			else if(Gtemp!=NULL)
+				fprintf(target_file, "MOV [%d], R%d\n", Gtemp->binding, r1);
+			else{
+				printf("Unknown variable: %s\n", t->varname);
+				exit(1);
+			}
+			freeReg();
+			freeReg();
+			break;
+		case NODE_ASSIGN_ARRAY:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			r2=codeGen(t->ptr3);
+			fprintf(target_file, "MOV [R%d], R%d\n", r1, r2);
+			freeReg();
+			freeReg();
+			break;
+		case NODE_ASSIGN_MATRIX:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2->ptr1);
+			fprintf(target_file, "MUL R%d, %d\n", r1, Gtemp->size1);
+			r2=codeGen(t->ptr2->ptr2);
+			fprintf(target_file, "ADD R%d, R%d\n", r1, r2);
+			freeReg();
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			r2=codeGen(t->ptr3);
+			fprintf(target_file, "MOV [R%d], R%d\n", r1, r2);
+			freeReg();
+			freeReg();
+			break;
+		case NODE_ASSIGN_PTR:
+			r1=codeGen(t->ptr2);
+			r2=getReg();
+			Ltemp=LLookup(t->ptr1->varname);
+			Gtemp=GLookup(t->ptr1->varname);
+			Ptemp=PLookup(t->ptr1->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r2);
+				fprintf(target_file, "ADD R%d, %d\n", r2, Ltemp->binding);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r2, r2);
+				fprintf(target_file, "MOV [R%d], R%d\n", r2, r1);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r3=3;
+				while(strcmp(Ptemp->name, t->ptr1->varname)){
+					r3++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r2);
+				fprintf(target_file, "SUB R%d, %d\n", r2, r3);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r2, r2);
+				fprintf(target_file, "MOV [R%d], R%d\n", r2, r1);
+			}
+			else if(Gtemp!=NULL){
+				fprintf(target_file, "MOV R%d, [%d]\n", r2, Gtemp->binding);
+				fprintf(target_file, "MOV [R%d], R%d\n", r2, r1);
+			}
+			else{
+				printf("Unknown variable: %s\n", t->varname);
+				exit(1);
+			}
+			freeReg();
+			freeReg();
+			break;
+		case NODE_REF:
+			r1=getReg();
+			Ltemp=LLookup(t->ptr1->varname);
+			Gtemp=GLookup(t->ptr1->varname);
+			Ptemp=PLookup(t->ptr1->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "ADD R%d, %d\n", r1, Ltemp->binding);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r3=3;
+				while(strcmp(Ptemp->name, t->ptr1->varname)){
+					r3++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "SUB R%d, %d\n", r1, r3);
+			}
+			else if(Gtemp!=NULL)
+				fprintf(target_file, "MOV R%d, %d\n", r1, Gtemp->binding);
+			else{
+				printf("Unknown variable: %s\n", t->varname);
+				exit(1);
+			}
+			break;
+		case NODE_REF_ARRAY:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			if(Gtemp->nodetype==NODE_MATRIX)
+				fprintf(target_file, "MUL R%d, %d\n", r1, Gtemp->size1);
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			break;
+		case NODE_REF_MATRIX:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			fprintf(target_file, "MUL R%d, %d\n", r1, Gtemp->size1);
+			r2=codeGen(t->ptr3);
+			fprintf(target_file, "ADD R%d, R%d\n", r1, r2);
+			freeReg();
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+		case NODE_IF:
+			l1=getLabel();
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "JZ R%d, L%d\n", r1, l1);
+			freeReg();
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "L%d:\n", l1);
+			break;
+		case NODE_ELIF:
+			l1=getLabel();
+			l2=getLabel();
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "JZ R%d, L%d\n", r1, l1);
+			freeReg();
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "JMP L%d\n", l2);
+			fprintf(target_file, "L%d:\n", l1);
+			r2=codeGen(t->ptr3);
+			fprintf(target_file, "L%d:\n", l2);
+			break;
+		case NODE_WHILE:
+			l1=getLabel();
+			l2=getLabel();
+			insLoop(l2, l1);
+			fprintf(target_file, "L%d:\n", l1);
+			r1=codeGen(t->ptr1);
+			fprintf(target_file, "JZ R%d, L%d\n", r1, l2);
+			freeReg();
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "JMP L%d\n", l1);
+			fprintf(target_file, "L%d:\n", l2);
+			delLoop();
+			break;
+		case NODE_DO_WHILE:
+			l1=getLabel();
+			l2=getLabel();
+			insLoop(l2, l1);
+			fprintf(target_file, "L%d:\n", l1);
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "JNZ R%d, L%d\n", r2, l1);
+			freeReg();
+			fprintf(target_file, "L%d:\n", l2);
+			delLoop();
+			break;
+		case NODE_REPEAT:
+			l1=getLabel();
+			l2=getLabel();
+			insLoop(l2, l1);
+			fprintf(target_file, "L%d:\n", l1);
+			r1=codeGen(t->ptr1);
+			r2=codeGen(t->ptr2);
+			fprintf(target_file, "JZ R%d, L%d\n", r2, l1);
+			freeReg();
+			fprintf(target_file, "L%d:\n", l2);
+			delLoop();
+			break;
+		case NODE_BREAK:
+			if(lHead!=NULL)
+				fprintf(target_file, "JMP L%d\n", lHead->br);
+			break;
+		case NODE_CONTINUE:
+			if(lHead!=NULL)
+				fprintf(target_file, "JMP L%d\n", lHead->cn);
+			break;
+		case NODE_BRKP:
+			fprintf(target_file, "BRKP\n");
 			break;
 		case NODE_WRITE:
 			r1=codeGen(t->ptr1);
-			fprintf(target_file, "MOV R2, \"Write\"\n");
-			fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "MOV R2, -2\n");
-			fprintf(target_file, "PUSH R2\n");
+			r2=getReg();
+			fprintf(target_file, "MOV R%d, \"Write\"\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, -2\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
 			fprintf(target_file, "PUSH R%d\n", r1);
-			fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "PUSH R2\n");
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
 			fprintf(target_file, "CALL 0\n");
-			fprintf(target_file, "POP R0\n");
-			fprintf(target_file, "POP R1\n");
-			fprintf(target_file, "POP R1\n");
-			fprintf(target_file, "POP R1\n");
-			fprintf(target_file, "POP R1\n");
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			freeReg();
 			freeReg();
 			break;
 		case NODE_READ:
-			fprintf(target_file, "MOV R2, \"Read\"\n");
-			fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "MOV R2, -1\n");
-			fprintf(target_file, "PUSH R2\n");
-			
-            r1=lookup(t->ptr1->varname)->binding;
-            if(t->ptr1->index1 != NULL)
-            {
-                r3=codeGen(t->ptr1->index1);
-                r5 = lookup(t->ptr1->varname)->rows;
-                fprintf(target_file, "MUL R%d, %d\n", r3, r5);
-                if(t->ptr1->index2 != NULL)
-                {
-                    r4 = codeGen(t->ptr1->index2);
-                    fprintf(target_file, "ADD R%d, R%d\n", r3, r4);
-                    freeReg();
-                }
-                fprintf(target_file, "ADD R%d, %d\n", r3, r1);
-                fprintf(target_file, "MOV R2, R%d\n", r3);
-                freeReg();
-                freeReg();
-            }
-            else
-            {
-                if(t->ptr1->nodetype == NODE_PTR)
-                    fprintf(target_file, "MOV R2, [%d]\n",r1);
-                else
-                    fprintf(target_file, "MOV R2, %d\n",r1);
-            }
-			
-            fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "PUSH R2\n");
-			fprintf(target_file, "PUSH R2\n");
+			r1=getReg();
+			r2=getReg();
+			Ltemp=LLookup(t->ptr1->varname);
+			Gtemp=GLookup(t->ptr1->varname);
+			Ptemp=PLookup(t->ptr1->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "ADD R%d, %d\n", r1, Ltemp->binding);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r3=3;
+				while(strcmp(Ptemp->name, t->ptr1->varname)){
+					r3++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "SUB R%d, %d\n", r1, r3);
+			}
+			else if(Gtemp!=NULL)
+				fprintf(target_file, "MOV R%d, %d\n", r1, Gtemp->binding);
+			else{
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			fprintf(target_file, "MOV R%d, \"Read\"\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, -1\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, R%d\n", r2, r1);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
 			fprintf(target_file, "CALL 0\n");
-			fprintf(target_file, "POP R0\n");
-			fprintf(target_file, "POP R1\n");
-			fprintf(target_file, "POP R1\n");
-			fprintf(target_file, "POP R1\n");
-			fprintf(target_file, "POP R1\n");
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			freeReg();
 			break;
-        case NODE_IF:
-            label_1 = getLabel();
-            label_2 = getLabel();
-            r1 = codeGen(t->ptr1);
-            fprintf(target_file, "JZ R%d, L%d\n", r1, label_1);
-            r1 = codeGen(t->ptr2);
-            fprintf(target_file, "JMP L%d\n", label_2);
-            fprintf(target_file, "L%d:\n", label_1);
-            r1 = codeGen(t->ptr3);
-            fprintf(target_file, "L%d:\n", label_2);
-            freeReg();
-            break;
-        case NODE_WHILE:
-            label_1 = getLabel();
-            label_2 = getLabel();
-            struct loop *temp = (struct loop*)malloc(sizeof(struct loop));
-            temp->a = label_1;
-            temp->b = label_2;
-            temp->next = l;
-            l = temp;
-            fprintf(target_file, "L%d:\n", label_1);
-            r1 = codeGen(t->ptr1);
-            fprintf(target_file, "JZ R%d, L%d\n", r1, label_2);
-            r1 = codeGen(t->ptr2);
-            fprintf(target_file, "JMP L%d\n", label_1);
-            fprintf(target_file, "L%d:\n", label_2);
-            l = l->next;
-            freeReg();
-            break; 
-        case NODE_LT:
-            r1 = codeGen(t->ptr1);
-            r2 = codeGen(t->ptr2);
-            fprintf(target_file, "LT R%d, R%d\n", r1, r2);
-            freeReg();
-            freeReg();
-            break;
-        case NODE_LE:
-            r1 = codeGen(t->ptr1);
-            r2 = codeGen(t->ptr2);
-            fprintf(target_file, "LE R%d, R%d\n", r1, r2);
-            freeReg();
-            freeReg();
-            break;
-        case NODE_GT:
-            r1 = codeGen(t->ptr1);
-            r2 = codeGen(t->ptr2);
-            fprintf(target_file, "GT R%d, R%d\n", r1, r2);
-            freeReg();
-            freeReg();
-            break;
-        case NODE_GE:
-            r1 = codeGen(t->ptr1);
-            r2 = codeGen(t->ptr2);
-            fprintf(target_file, "GE R%d, R%d\n", r1, r2);
-            freeReg();
-            freeReg();
-            break;
-        case NODE_NE:
-            r1 = codeGen(t->ptr1);
-            r2 = codeGen(t->ptr2);
-            fprintf(target_file, "NE R%d, R%d\n", r1, r2);
-            freeReg();
-            freeReg();
-            break;    
-        case NODE_EQ:
-            r1 = codeGen(t->ptr1);
-            r2 = codeGen(t->ptr2);
-            fprintf(target_file, "EQ R%d, R%d\n", r1, r2);
-            freeReg();
-            freeReg();
-            break;    
-        case NODE_BREAK:
-            if(l != NULL)
-                fprintf(target_file, "JMP L%d\n", l->b);
-            break;
-        case NODE_CONTINUE:
-            if(l != NULL)
-                fprintf(target_file, "JMP L%d\n", l->a);
-		    break;
-        case NODE_CONN:
+		case NODE_READ_ARRAY:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			r2=getReg();
+			fprintf(target_file, "MOV R%d, \"Read\"\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, -1\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, R%d\n", r2, r1);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "CALL 0\n");
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			freeReg();
+			freeReg();
+			break;
+		case NODE_READ_MATRIX:
+			Gtemp=GLookup(t->ptr1->varname);
+			if(Gtemp==NULL){
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			r1=codeGen(t->ptr2);
+			fprintf(target_file, "MUL R%d, %d\n", r1, Gtemp->size1);
+			r2=codeGen(t->ptr3);
+			fprintf(target_file, "ADD R%d, R%d\n", r1, r2);
+			fprintf(target_file, "ADD R%d, %d\n", r1, Gtemp->binding);
+			fprintf(target_file, "MOV R%d, \"Read\"\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, -1\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, R%d\n", r2, r1);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "CALL 0\n");
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			freeReg();
+			freeReg();
+			break;
+		case NODE_READ_PTR:
+			r1=getReg();
+			r2=getReg();
+			Ltemp=LLookup(t->ptr1->varname);
+			Gtemp=GLookup(t->ptr1->varname);
+			Ptemp=PLookup(t->ptr1->varname);
+			if(Ltemp!=NULL){
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "ADD R%d, %d\n", r1, Ltemp->binding);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else if(Ptemp!=NULL){
+				Ptemp=Phead;
+				r3=3;
+				while(strcmp(Ptemp->name, t->ptr1->varname)){
+					r3++;
+					Ptemp=Ptemp->next;
+				}
+				fprintf(target_file, "MOV R%d, BP\n", r1);
+				fprintf(target_file, "SUB R%d, %d\n", r1, r3);
+				fprintf(target_file, "MOV R%d, [R%d]\n", r1, r1);
+			}
+			else if(Gtemp!=NULL)
+				fprintf(target_file, "MOV R%d, [%d]\n", r1, Gtemp->binding);
+			else{
+				printf("Unknown variable: %s\n", t->ptr1->varname);
+				exit(1);
+			}
+			fprintf(target_file, "MOV R%d, \"Read\"\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, -1\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "MOV R%d, R%d\n", r2, r1);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "PUSH R%d\n", r2);
+			fprintf(target_file, "CALL 0\n");
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			fprintf(target_file, "POP R%d\n", r2);
+			freeReg();
+			freeReg();
+			break;
+		case NODE_CONN:
 			r1=codeGen(t->ptr1);
 			r2=codeGen(t->ptr2);
 			break;
-        
 		default:
 			printf("Error\n");
 			exit(1);
@@ -369,409 +691,453 @@ reg_index codeGen(struct tnode *t)
 	return r1;
 }
 
+void typeCheck(struct Typetable *type1, struct Typetable *type2, int nodetype){
+	switch(nodetype){
+		case NODE_ASSIGN:
+			if(type1!=type2 && (type2 != TLookup(nulltype))){
+				printf("Assignment Type Mismatch %s %s\n", type1->name, type2->name);
+				exit(1);
+			}
+			break;
+		case NODE_PLUS:
+		case NODE_MINUS:
+		case NODE_MUL:
+		case NODE_DIV:
+		case NODE_MOD:
+			if((type1!=TLookup(inttype))||(type2!=TLookup(inttype))){
+				printf("Arithmetic Operator Type Mismatch\n");
+				exit(1);
+			}
+			break;
+		case NODE_LT:
+		case NODE_GT:
+		case NODE_LE:
+		case NODE_GE:
+            if(type2 == TLookup(nulltype))
+            {
+                printf("Can only check equality with null type \n");
+                exit(1);
+            }
+		case NODE_NE:
+        case NODE_EQ:
+            if(type1 == TLookup(nulltype))
+            {
+                printf("Attempting to compare a null type\n");
+                exit(1);
+            }
+            if(type2 == TLookup(nulltype))
+                break;
+            if(((type1!=type2)||((type1!=TLookup(inttype))&&(type1!=TLookup(strtype)))||((type2!=TLookup(inttype))&&(type2!=TLookup(strtype))))){
+				printf("Relational Operator Type Mismatch %s %s\n", type1->name, type2->name);
+				exit(1);
+			}
+            break;
+		case NODE_AND:
+		case NODE_OR:
+            if(type1 != TLookup(booltype) || type2 != TLookup(booltype))
+            {
+                printf("%s or %s not of type bool\n", type1->name, type2->name);
+                exit(1);
+            }
+            break;
+		case NODE_NOT:
+			if(type1 != TLookup(booltype))
+            {
+                printf("%s not of type bool\n", type1->name);
+                exit(1);
+            }
+			break;
+		case NODE_ARRAY:
+			if(type1!=TLookup(inttype)){
+				printf("Array Type Mismatch\n");
+				exit(1);
+			}
+			break;
+		case NODE_MATRIX:
+			if((type1!=TLookup(inttype))||(type2!=TLookup(inttype))){
+				printf("Matrix Type Mismatch\n");
+				exit(1);
+			}
+			break;
+	}
+}
 
-//Prints first few lines of XEXE file, and calls codeGen()
-void print(struct tnode *t){
-    int i;
+void idCheck(struct tnode *t, int nodetype){
+	int inodetype;
+	struct Lsymbol *Ltemp=LLookup(t->varname);
+	struct Gsymbol *Gtemp=GLookup(t->varname);
+	struct Paramstruct *Ptemp=PLookup(t->varname);
+	
+	if(Ltemp!=NULL)
+		inodetype=Ltemp->nodetype;
+	else if(Ptemp!=NULL)
+		inodetype=Ptemp->nodetype;
+	else if(Gtemp!=NULL)
+		inodetype=Gtemp->nodetype;
+	else{
+		printf("Unknown variable %s\n", t->varname);
+		exit(1);
+	}
+
+	if(nodetype==NODE_REF_ARRAY){
+		if((inodetype!=NODE_ARRAY)&&(inodetype!=NODE_MATRIX)){
+			printf("Incorrect identifier\n");
+			exit(1);
+		}
+	}
+	else if(nodetype==NODE_REF_MATRIX){
+		if(inodetype!=NODE_MATRIX){
+			printf("Incorrect identifier\n");
+			exit(1);
+		}
+	}
+	else if(nodetype==NODE_ID){
+		if((inodetype!=NODE_ID)&&(inodetype!=NODE_PTR)){
+			printf("Incorrect identifier\n");
+			exit(1);
+		}
+	}
+	else if(inodetype!=nodetype){
+		printf("Incorrect identifier\n");
+		exit(1);
+	}
+}
+
+void evaluate(){
 	fprintf(target_file, "0\n2056\n0\n0\n0\n0\n0\n0\n");
-	fprintf(target_file, "MOV SP, %d\n", sp);
-	if(t!=NULL)
-		reg=codeGen(t);
+	fprintf(target_file, "MOV SP, %d\n", binding-1);
+	fprintf(target_file, "MOV BP, %d\n", binding);
+	fprintf(target_file, "PUSH R0\n");
+	fprintf(target_file, "CALL MAIN\n");
 	fprintf(target_file, "INT 10\n");
 }
 
-
-//Prints AST nodes inorder
-void inorder(struct tnode *t)
-{
-    if(t == NULL)
-        return;
-    printf("Nodetype: %d\n", t->nodetype);
-    inorder(t->ptr1);
-    inorder(t->ptr2);
-    inorder(t->ptr3);
-}
-
-void printTree(struct tnode *t)
-{
-    if(t==NULL)
-        return;
-    printf("Value\tNodetype\tType\n");
-    printNode(t);
-    printf("First child:\n");
-    printNode(t->ptr1);
-    printf("Second child:\n");
-    printNode(t->ptr2);
-    printf("Third child:\n");
-    printNode(t->ptr3);
-    printTree(t->ptr1);
-    printTree(t->ptr2);
-    printTree(t->ptr3);
-}
-void printNode(struct tnode *t)
-{
-    if(t == NULL)
-        return;
-    printf("%d\t%d\t%d\n", t->val, t->nodetype, t->type);
-    return;
-}
-
-void paramCheck(struct tnode *function, struct tnode *paramList)
-{
-    struct Gsymbol *gentry = lookup(function->varname);
-    if(gentry == NULL)
-        return;
-    if(gentry->size != -1)
-        return;
-    struct paramList *plist = gentry->plist;
-    struct tnode *cmp;
-    while(plist != NULL && paramList != NULL)
-    {
-        
-        if(paramList->nodetype == NODE_CONN)
-            cmp = paramList->ptr2;
-        else
-            cmp = paramList;
-        printf("Param Name:\t%s\nParam type:\t%d\nCall type:\t%d\n", plist->name, plist->type, cmp->type);
-        if(plist->type != cmp->type)
-            yyerror("Function call: parameter type mismatch\n");
-        plist = plist->next;
-        if(paramList->nodetype == NODE_CONN)
-            paramList = paramList->ptr1;
-        else
-            paramList = NULL;
-    }
-    if(plist || paramList)
-        yyerror("Function call: parameter list mismatch\n");
-    return;
-}
-
-//Creates a new node for AST with given parameters
-struct tnode* createTree(int val, int nodetype, int type, char *c, struct tnode *ptr1, struct tnode *ptr2,struct tnode *ptr3, struct tnode *index1, struct tnode *index2, struct tnode *paramList)
-{
+struct tnode* createTree(int val, struct Typetable *type, char *varname, int nodetype, struct tnode *ptr1, struct tnode *ptr2, struct tnode *ptr3){
 	struct tnode *temp;
+	struct Lsymbol *Ltemp;
+	struct Gsymbol *Gtemp;
+	struct Paramstruct *Ptemp;
 	temp=(struct tnode*)malloc(sizeof(struct tnode));
+	temp->val=val;
+	temp->type=type;
 	temp->nodetype=nodetype;
-    temp->type = type;
-    temp->varname = NULL;
-	if(c != NULL)
-    {
-		temp->varname=malloc(sizeof(c));
-        strcpy(temp->varname, c);
+	switch(nodetype){
+		case NODE_NUM:
+			temp->type=TLookup(inttype);
+			break;
+		case NODE_STR:
+			temp->type=TLookup(strtype);
+			temp->varname=malloc(sizeof(varname));
+			strcpy(temp->varname, varname);
+			break;
+		case NODE_ID:
+			temp->varname=malloc(sizeof(varname));
+			strcpy(temp->varname, varname);
+			Ltemp=LLookup(temp->varname);
+			Gtemp=GLookup(temp->varname);
+			Ptemp=PLookup(temp->varname);
+			if(Ltemp!=NULL){
+				temp->type=Ltemp->type;
+				if(Ltemp->nodetype==NODE_PTR)
+					temp->type=TLookup(inttype);
+			}
+			else if(Ptemp!=NULL){
+				temp->type=Ptemp->type;
+				if(Ptemp->nodetype==NODE_PTR)
+					temp->type=TLookup(inttype);
+			}
+			else if(Gtemp!=NULL){
+				temp->type=Gtemp->type;
+				if(Gtemp->nodetype==NODE_PTR)
+					temp->type=TLookup(inttype);
+			}
+			temp->Lentry=Ltemp;
+			temp->Gentry=Gtemp;
+			break;
+		case NODE_ARRAY:
+		case NODE_MATRIX:
+		case NODE_PTR:
+			
+			Ltemp=LLookup(ptr1->varname);
+			Gtemp=GLookup(ptr1->varname);
+			Ptemp=PLookup(ptr1->varname);
+			if(Ltemp!=NULL)
+				temp->type=Ltemp->type;
+			else if(Ptemp!=NULL)
+				temp->type=Ptemp->type;
+			else if(Gtemp!=NULL)
+				temp->type=Gtemp->type;
+			else{
+				printf("Unknown identifier: %s\n", ptr1->varname);
+				exit(1);
+			}
+			temp->Lentry=Ltemp;
+			temp->Gentry=Gtemp;
+			break;
 	}
-    temp->val = val;
 	temp->ptr1=ptr1;
 	temp->ptr2=ptr2;
-    temp->ptr3=ptr3;
-    temp->index1 = index1;
-    temp->index2 = index2;
-    
-    if(temp->nodetype == NODE_FCALL)
-        paramCheck(temp, paramList);
-    
-    temp->paramList = paramList;
-    
-    declCheck(ptr1);
-    declCheck(ptr2);
-    declCheck(ptr3);
-    
-     semanticCheck(temp);
-    
-/*    printf("Node created %d %d\n", temp->nodetype,  temp->type);
-    if(temp->varname != NULL)
-        printf("%s\n", temp->varname);
-    if(temp->ptr1 != NULL)
-    {
-        printf("First child %d %d\n", temp->ptr1->nodetype, temp->ptr1->type);
-        if(temp->ptr1->varname != NULL)
-            printf("%s\n", temp->ptr1->varname);
-    }
-    if(temp->ptr2 != NULL)
-    {
-        printf("Second child %d %d\n", temp->ptr2->nodetype, temp->ptr2->type);
-        if(temp->ptr2->varname != NULL)
-            printf("%s\n", temp->ptr2->varname);
-    }
-    if(temp->ptr3 != NULL)
-    {
-        printf("Third child %d %d\n", temp->ptr3->nodetype, temp->ptr3->type);
-        if(temp->ptr3->varname != NULL)
-            printf("%s\n", temp->ptr3->varname);
-    }
-*/    
-    return temp;
+	temp->ptr3=ptr3;
+	return temp;
 }
 
+void insLoop(int br, int cn){
+	struct loop *temp;
+	temp=(struct loop*)malloc(sizeof(struct loop));
+	temp->br=br;
+	temp->cn=cn;
+	temp->next=lHead;
+	lHead=temp;
+}
 
+void delLoop(){
+	struct loop *temp;
+	if(lHead==NULL)
+		return;
+	temp=lHead;
+	lHead=lHead->next;
+	free(temp);
+}
 
-struct Gsymbol *lookup(char *name)
+struct Gsymbol* GLookup(char *name){
+	struct Gsymbol *temp=Ghead;
+	while(temp!=NULL){
+		if(!strcmp(temp->name, name))
+			return temp;
+		temp=temp->next;
+	}
+	return NULL;
+}
+
+void GInstall(char *name, struct Typetable *type, int size1, int size2, int nodetype, struct Paramstruct *paramlist){
+	struct Gsymbol *temp;
+	temp=GLookup(name);
+	if(temp!=NULL){
+		printf("Multiple declaration : %s\n", name);
+		exit(1);
+	}
+
+	temp=(struct Gsymbol*)malloc(sizeof(struct Gsymbol));
+	temp->name=malloc(sizeof(name));
+	strcpy(temp->name, name);
+	temp->type=type;
+	temp->size1=size1;
+	temp->size2=size2;
+	temp->nodetype=nodetype;
+	temp->paramlist=paramlist;
+
+	if(nodetype=NODE_FUNC)
+		temp->flabel=flabel++;
+
+	if((binding+(temp->size1*temp->size2))>=5120){
+		printf("Static Area Overflow\n");
+		exit(1);
+	}
+	temp->binding=binding;
+	binding+=temp->size1*temp->size2;
+
+	if(Ghead==NULL)
+		Ghead=Gtail=temp;
+	else{
+		Gtail->next=temp;
+		Gtail=temp;
+	}
+}
+
+struct Lsymbol* LLookup(char *name){
+	struct Lsymbol *temp=Lhead;
+	while(temp!=NULL){
+		if(!strcmp(temp->name, name))
+			return temp;
+		temp=temp->next;
+	}
+	return NULL;
+}
+
+void LInstall(char *name, struct Typetable *type, int nodetype){
+	struct Lsymbol *temp;
+	temp=LLookup(name);
+	if(temp!=NULL){
+		printf("Multiple declaration : %s\n", name);
+		exit(1);
+	}
+
+	temp=(struct Lsymbol*)malloc(sizeof(struct Lsymbol));
+	temp->name=malloc(sizeof(name));
+	strcpy(temp->name, name);
+	temp->type=type;
+	temp->nodetype=nodetype;
+	temp->binding=binding++;
+
+	if(Lhead==NULL)
+		Lhead=Ltail=temp;
+	else{
+		Ltail->next=temp;
+		Ltail=temp;
+	}
+}
+
+struct Paramstruct* PLookup(char *name){
+	struct Paramstruct *temp=Phead;
+	while(temp!=NULL){
+		if(!strcmp(temp->name, name))
+			return temp;
+		temp=temp->next;
+	}
+	return NULL;
+}
+
+void PInstall(char *name, struct Typetable *type, int nodetype){
+	struct Paramstruct *temp;
+	temp=PLookup(name);
+	if(temp!=NULL){
+		printf("Multiple declaration : %s\n", name);
+		exit(1);
+	}
+
+	temp=(struct Paramstruct*)malloc(sizeof(struct Paramstruct));
+	temp->name=malloc(sizeof(name));
+	strcpy(temp->name, name);
+	temp->type=type;
+	temp->nodetype=nodetype;
+
+	if(Phead==NULL)
+		Phead=Ptail=temp;
+	else{
+		Ptail->next=temp;
+		Ptail=temp;
+	}
+}
+
+struct Typetable *TLookup(char *name)
 {
-    if(name == NULL)
-        return NULL;
-    struct Gsymbol *temp = symbol_top;
-    while(temp != NULL)
+//    printf("Finding for type %s in\n", name);
+ //   printTypeTable();
+    struct Typetable *temp = Thead;
+    while(temp)
     {
-        if(strcmp(name, temp->name) == 0)
+        if(strcmp(temp->name, name) == 0)
+        {
             break;
-        temp = temp->next;
-    }
-    return temp;
-}
-struct Lsymbol* lookup_local(char *name)
-{
-    struct Lsymbol *temp = local_symbol_top;
-    while(temp != NULL)
-    {
-        if(strcmp(name, temp->name) == 0)
-            break;
+        }
         temp = temp->next;
     }
     return temp;
 }
 
-
-
-//Checks if the node variable has been declared
-void declCheck(struct tnode *t)
+void TInstall(char *name, int size, struct Fieldlist *fields)
 {
-    if(t == NULL)
-        return;
-    if(t->nodetype != NODE_VAR)
-        return;
-    struct Lsymbol *temp_local;
-    temp_local = lookup_local(t->varname);
-    struct Gsymbol *temp = NULL;
-    if(temp_local == NULL)
-        printSymbolTable();
-    else
+    if(TLookup(name) != NULL)
     {
-        int something = temp_local->type;
-        printf("%d\n", something);
-        t->type = something;
-        printf("%d\n", t->type);       //temp_local->type = 0;
+        printf("Multiple type declaration: %s\n", name);
+        exit(1);
     }
-    //printf("Hello\n");
-    if(temp_local == NULL && temp == NULL)
-        yyerror("Error! Undeclared variable.\n");
-    t->gentry = temp;
-    t->lentry = temp_local;
-    
-}
-
-
-void checkTree(struct tnode *t)
-{
-    if(t == NULL)
-        return;
-    semanticCheck(t);
-    checkTree(t->ptr1);
-    checkTree(t->ptr2);
-    checkTree(t->ptr3);
-}
-//Checks for type mismatch and other semantic errors
-void semanticCheck(struct tnode *t)
-{
-    switch(t->nodetype)
-    {
-        case NODE_IF    :
-        case NODE_WHILE :
-                        if(t->ptr1->type != TYPE_BOOL)
-                        {
-                            yyerror("Error. Conditional type not bool.\n");
-                        }
-                        break;
-        case NODE_PLUS  :
-        case NODE_MINUS :
-        case NODE_MUL   :
-        case NODE_DIV   :
-                        t->type = t->ptr1->type;
-                        if(t->type != t->ptr2->type || t->type != TYPE_INT || t->ptr2->type != TYPE_INT)
-                        {
-                            yyerror("Error. Operator type mismatch!\n");
-                        }
-                        break;
-        case NODE_LT    :
-        case NODE_LE    :
-        case NODE_GT    :
-        case NODE_GE    :
-        case NODE_NE    :
-        case NODE_EQ    :
-                        if(t->ptr1->type != t->ptr2->type)
-                            yyerror("Error. Comparision type mismatch.\n");
-        case NODE_ASSIGN:  
-                        if(t->ptr1->type != t->ptr2->type)
-                        {
-                        //    printf("%s\t%d\t%d\n", t->ptr1->varname, t->ptr1->type, t->ptr2->type);
-                            
-                            yyerror("Error. Assign type mismatch.\n");
-                        }
-                        break;
-        default:
-                        break;
-                        
-    }
-}
-
-void printSymbolTable()
-{
-    struct Gsymbol *temp = symbol_top;
-    printf("Name\tType\tSize\tRows\tPointer\tBinding\n");
-    while(temp != NULL)
-    {
-        printf("%s\t%d\t%d\t%d\t%d\t%d\n", temp->name, temp->type, temp->size, temp->rows, temp->ispointer, temp->binding);
-        temp = temp->next;
-    }
-}
-
-
-//Declares variables of given type from the varlist
-void declareVariables(int type, struct varList *l)
-{
-//    printf("Following variables of type %d declared:\n", type);
-    while(l != NULL)
-    {
-        install(l->varName, type, l->size, l->rows, l->ispointer, l->plist);
-     //   printParamList(l->plist);
-        l = l->next;
-    }    
-}
-
-//Appends a new entry to symbol table
-void install(char *name, int type, int size, int rows, int ispointer, struct paramList *plist)
-{
-    if(lookup(name) != NULL)
-        yyerror("Variable redeclared!\n");
-    struct Gsymbol *temp;
-    temp = (struct Gsymbol*)malloc(sizeof(struct Gsymbol));
-    temp->name = name;
-    temp->type = type;
+    struct Typetable *temp = (struct Typetable*)malloc(sizeof(struct Typetable));
+    temp->name = strdup(name);
     temp->size = size;
-    temp->rows = rows;
-    temp->ispointer = ispointer;
-//    printf("Creating entry %s %d %d \n", temp->name, temp->type, temp->size);
-    temp->binding = alloc(size);
-    temp->plist = plist;
-//    printParamList(temp->plist);
-    if(size == -1)
-        temp->flabel = getFunctionLabel();
-    temp->next = symbol_top;
-    symbol_top = temp;
-}
-void install_params(struct paramList *plist)
-{
-    while(plist != NULL)
+    struct Fieldlist *templist = fields;
+    while(templist)
     {
-        install_local(plist->name, plist->type);
-        plist = plist->next;
+        if(templist->type == TLookup(temptype))
+            templist->type = temp;
+        templist = templist->next;
     }
-}
-void install_local(char *name, int type)
-{
-    if(lookup_local(name) != NULL)
-        yyerror("Local variable redeclared!\n");
-    struct Lsymbol *temp = (struct Lsymbol*)malloc(sizeof(struct Lsymbol));
-    temp->name = name;
-    temp->type = type;
-    temp->binding = alloc(1);
-    temp->next = local_symbol_top;
-    local_symbol_top = temp;
-}
-void declareLocalVariables(int type, struct varList *l)
-{
-    while(l)
-    {
-        install_local(l->varName, type);
-        l = l->next;
-    }
-}
-
-//Appends a new variable name to varlist
-struct varList* appendVariable(struct varList *l, struct varList *node)
-{
-    node->next = l;
-    return node;
-}
-
-
-//initialises varlist
-struct varList* makeVarList(struct tnode *t, int size, int rows, int ispointer, struct paramList *plist)
-{
-    struct varList *temp = (struct varList*)malloc(sizeof(struct varList));
-    temp->varName = t->varname;
+    temp->fields = fields;
     temp->next = NULL;
-    temp->size = size;
-    temp->rows = rows;
-    temp->ispointer = ispointer;
-    temp->plist = plist;
-    return temp;
-}
-void printVarList(struct varList *l)
-{
-    printf("Current varList:\n");
-    while(l != NULL)
-    {
-        printf("%s\n", l->varName);
-        l = l->next;
-    }
+    temp->next = Thead;
+    Thead = temp;
 }
 
-struct paramList* makeParamList(char *name, int type)
+struct Fieldlist *FLookup(char *name)
 {
-    struct paramList *temp = (struct paramList*)malloc(sizeof(struct paramList));
+    struct Fieldlist *temp = Fhead;
+    while(temp)
+    {
+        if(strcmp(temp->name, name) == 0)
+            break;
+        temp = temp->next;
+    }
+    return temp;
+}
+
+struct Fieldlist *FCreate(char *name, struct Typetable *type)
+{
+    struct Fieldlist *temp = (struct Fieldlist*)malloc(sizeof(struct Fieldlist));
     temp->name = strdup(name);
     temp->type = type;
     temp->next = NULL;
+    temp->fieldIndex = 1;
+    return temp;
 }
 
-struct paramList* appendParam(struct paramList *list, struct paramList *node)
+struct Fieldlist *FAppend(struct Fieldlist *entry, struct Fieldlist *list)
 {
-    node->next = list;
-    return node;
-}
-
-void printParamList(struct paramList *plist)
-{
-    printf("Name\tType\n");
-    while(plist)
+    entry->next = list;
+    entry->fieldIndex = list->fieldIndex + 1;
+    if(entry->fieldIndex > 8)
     {
-        printf("%s\t%d\n", plist->name, plist->type);
-        plist = plist->next;
+        printf("Maximum 8 fields per datatype\n");
+        exit(1);
     }
+    return entry;
 }
 
-void functionCheck(struct tnode *function, struct paramList *plist, int type)
+int GetSize(struct Typetable *type)
 {
-    struct Gsymbol *temp = lookup(function->varname);
-    
-    if(temp)
+    return type->size;
+}
+
+void TypeTableCreate()
+{
+    Thead = NULL;
+    TInstall(inttype, 1, NULL);
+    TInstall(strtype, 1, NULL);
+    TInstall(booltype, 1, NULL);
+    TInstall(nulltype, 0, NULL);
+    TInstall(temptype, 1, NULL);
+    declType=TLookup(inttype); PdeclType=TLookup(inttype); functype=TLookup(inttype);
+}
+
+void printTypeTable()
+{
+    struct Typetable *temp = Thead;
+    printf("NAME\tSIZE\n");
+    while(temp)
     {
-       // printParamList(temp->plist);
-        struct paramList *list = temp->plist;
-        while(list && plist)
+        printf("%s\t%d\n", temp->name, temp->size);
+        if(temp->fields)
         {
-            if(list->type != plist->type)
+            printf("Fields: ");
+            struct Fieldlist *templist = temp->fields;
+            while(templist)
             {
-            //    printParamList(plist);
-            //    printParamList(list);
-                yyerror("Parameter list mismatch!\n");
+                printf("%s %s ", templist->type->name, templist->name);
+                templist = templist->next;
             }
-            list = list->next;
-            plist = plist->next;
+            printf("\n");
         }
-        if(plist || list)
-        {
-            
-        //    printParamList(plist);
-        //    printParamList(list);
-            yyerror("Parameter list mismatch!\n");
-        }
-        if(type != temp->type)
-        {    
-            yyerror("Return type mismatch!\n");
-        }
+        temp = temp->next;
     }
-    else
+}
+
+struct Fieldlist *getField(struct Typetable *temp, char *name)
+{
+    if(temp == NULL)
     {
-        yyerror("Undeclared function!\n");
+        printf("Attempt to get a field from non-existent type\n");
+        exit(1);
     }
+    struct Fieldlist *templist = temp->fields;
+    while(templist)
+    {
+        if(strcmp(templist->name, name) == 0)
+            break;
+        templist = templist->next;
+    }
+    if(templist == NULL)
+    {
+        printf("Cannot find reference to member %s in type %s\n", name, temp->name);
+        exit(1);
+    }
+    return templist;
 }

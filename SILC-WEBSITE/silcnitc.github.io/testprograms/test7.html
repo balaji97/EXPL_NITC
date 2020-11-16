@@ -1,0 +1,48 @@
+<!Doctype html>
+<html lang="en">
+
+<!-- Mirrored from silcnitc.github.io/testprograms/test7.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:54:41 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+<title>TESTCASE 7</title>
+<meta charset="UTF-8">
+<link rel="../stylesheet" href="../css/style.css">
+</head>
+<body>
+<pre>
+decl
+ int fun(int x),a;
+enddecl
+
+int fun(int x)
+{
+ begin
+  if(x &gt;= 91) then
+   a = 91;
+  else
+   a = fun(fun(x+11));
+  endif;
+
+  return a;
+ end
+}
+
+int main()
+{
+ decl
+  int b,c;
+ enddecl
+
+ begin
+  read(b);
+  c = fun(b);
+  write(c);
+
+  return 0;
+ end
+}
+</pre>
+</body>
+
+<!-- Mirrored from silcnitc.github.io/testprograms/test7.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:54:41 GMT -->
+</html>

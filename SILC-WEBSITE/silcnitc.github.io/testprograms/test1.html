@@ -1,0 +1,55 @@
+<!Doctype html>
+<html lang="en">
+
+<!-- Mirrored from silcnitc.github.io/testprograms/test1.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:54:41 GMT -->
+<!-- Added by HTTrack --><meta http-equiv="content-type" content="text/html;charset=utf-8" /><!-- /Added by HTTrack -->
+<head>
+<title>TESTCASE 1</title>
+<meta charset="UTF-8">
+<link rel="../stylesheet" href="../css/style.css">
+</head>
+<body>
+<pre>
+decl 
+   int n,arr[50],i,j,dup; 
+enddecl
+
+int main()
+{
+  begin
+  read(n);
+
+  i=0;
+  while(i&lt;n) do
+    read(arr[i]);
+    i = i+1;
+  endwhile;
+
+  i=0;
+  while(i&lt;n) do
+    j=i;
+    while(j&lt;n) do
+      if(arr[i]&gt;arr[j]) then
+        dup = arr[i];
+        arr[i] = arr[j];
+        arr[j] = dup;
+      endif;
+      j = j + 1;
+    endwhile;
+    i = i+1;
+  endwhile;
+
+  i=0;
+  while(i&lt;n) do
+    write(arr[i]);
+    i = i+1;
+  endwhile;
+
+  return 0;
+  end
+}
+</pre>
+</body>
+
+<!-- Mirrored from silcnitc.github.io/testprograms/test1.html by HTTrack Website Copier/3.x [XR&CO'2014], Mon, 19 Feb 2018 14:54:41 GMT -->
+</html>

@@ -1,10 +1,9 @@
-
-yacc -d compiler_yacc.y
-lex compiler_lex.l
-gcc y.tab.c lex.yy.c -o test.exe
-./test.exe input.expl
-lex compiler_label.l
+yacc -d exprtree.y
+lex exprtree.l
+gcc y.tab.c lex.yy.c -o exprtree.exe
+./exprtree.exe input.expl
+lex label.l
 gcc lex.yy.c
 ./a.out
-./xsm -l library.lib -e a.xsm
-./cleanup.sh
+rm exprtree.xsm exprtree.exe a.out
+./xsm -l library.lib -e code.xsm
